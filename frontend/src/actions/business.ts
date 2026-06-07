@@ -128,79 +128,87 @@ export const getActiveBusiness = cache(async () => {
  */
 export async function createBusiness(data: { name: string; logoUrl?: string; plan?: string; partners: Array<{ name: string; email: string; role: string }> }) {
   await delay(1500);
-  const { userId } = await auth();
-  if (!userId) throw new Error("Unauthorized");
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
 
-  const user = await currentUser();
-  const ownerName = user?.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : "Owner";
-  const ownerEmail = (user?.emailAddresses[0]?.emailAddress || "").toLowerCase().trim();
+    const user = await currentUser();
+    const ownerName = user?.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : "Owner";
+    const ownerEmail = (user?.emailAddresses[0]?.emailAddress || "").toLowerCase().trim();
 
-  // Deduplicate partners by email, and filter out empty emails or owner's email
-  const uniquePartnersMap = new Map<string, { name: string; email: string; role: string }>();
-  for (const partner of data.partners) {
-    const email = partner.email.toLowerCase().trim();
-    if (!email) continue;
-    if (email === ownerEmail) continue; // Owner is automatically registered
-    uniquePartnersMap.set(email, {
-      name: partner.name,
-      email,
-      role: partner.role,
-    });
-  }
-  const filteredPartners = Array.from(uniquePartnersMap.values());
-
-  // 1. Create the business and associate the owner as member
-  const business = await prisma.business.create({
-    data: {
-      name: data.name,
-      logo: data.logoUrl || null,
-      ownerId: userId,
-      plan: ownerEmail === "bhavypatel2945@gmail.com" ? "Enterprise" : (data.plan || "Trial"),
-      subscriptionStatus: "Active",
-      members: {
-        create: [
-          {
-            name: ownerName,
-            email: ownerEmail || null,
-            clerkUserId: userId,
-            role: "OWNER",
-          },
-          ...filteredPartners.map((partner) => ({
-            name: partner.name,
-            email: partner.email,
-            role: partner.role, // "PARTNER_EDIT" or "PARTNER_VIEW"
-          })),
-        ],
-      },
-    },
-  });
-
-  // Create corresponding Partner record in Partner table for erp/ledgers
-  await prisma.partner.create({
-    data: {
-      businessId: business.id,
-      name: ownerName,
-      email: ownerEmail || 'owner@autoconsult.com',
-      phone: '0000000000',
-      ownershipPercent: 100
+    // Deduplicate partners by email, and filter out empty emails or owner's email
+    const uniquePartnersMap = new Map<string, { name: string; email: string; role: string }>();
+    for (const partner of data.partners) {
+      const email = partner.email.toLowerCase().trim();
+      if (!email) continue;
+      if (email === ownerEmail) continue; // Owner is automatically registered
+      uniquePartnersMap.set(email, {
+        name: partner.name,
+        email,
+        role: partner.role,
+      });
     }
-  });
+    const filteredPartners = Array.from(uniquePartnersMap.values());
 
-  // Also create Partner records for all invited partners immediately
-  for (const partner of filteredPartners) {
+    // 1. Create the business and associate the owner as member
+    const business = await prisma.business.create({
+      data: {
+        name: data.name,
+        logo: data.logoUrl || null,
+        ownerId: userId,
+        plan: ownerEmail === "bhavypatel2945@gmail.com" ? "Enterprise" : (data.plan || "Trial"),
+        subscriptionStatus: "Active",
+        members: {
+          create: [
+            {
+              name: ownerName,
+              email: ownerEmail || null,
+              clerkUserId: userId,
+              role: "OWNER",
+            },
+            ...filteredPartners.map((partner) => ({
+              name: partner.name,
+              email: partner.email,
+              role: partner.role, // "PARTNER_EDIT" or "PARTNER_VIEW"
+            })),
+          ],
+        },
+      },
+    });
+
+    // Create corresponding Partner record in Partner table for erp/ledgers
     await prisma.partner.create({
       data: {
         businessId: business.id,
-        name: partner.name,
-        email: partner.email,
+        name: ownerName,
+        email: ownerEmail || 'owner@autoconsult.com',
         phone: '0000000000',
-        ownershipPercent: 0
+        ownershipPercent: 100
       }
     });
-  }
 
-  revalidatePath("/dashboard", "layout");
-  return { success: true };
+    // Also create Partner records for all invited partners immediately
+    for (const partner of filteredPartners) {
+      await prisma.partner.create({
+        data: {
+          businessId: business.id,
+          name: partner.name,
+          email: partner.email,
+          phone: '0000000000',
+          ownershipPercent: 0
+        }
+      });
+    }
+
+    revalidatePath("/dashboard", "layout");
+    return { success: true };
+  } catch (error: any) {
+    if (error.digest?.startsWith("NEXT_REDIRECT")) {
+      throw error;
+    }
+    console.error("createBusiness failed:", error);
+    return { success: false, error: error.message || "An unexpected error occurred." };
+  }
 }
 
 /**
@@ -208,26 +216,35 @@ export async function createBusiness(data: { name: string; logoUrl?: string; pla
  */
 export async function updateBusinessBranding(formData: FormData) {
   await delay(1500);
-  const { userId } = await auth();
-  if (!userId) throw new Error("Unauthorized");
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
 
-  const name = formData.get("name") as string;
-  const logo = formData.get("logo") as string;
+    const name = formData.get("name") as string;
+    const logo = formData.get("logo") as string;
 
-  const context = await getActiveBusiness();
-  if (!context || context.membership.role !== "OWNER") {
-    throw new Error("Only the Business Owner can update business settings");
+    const context = await getActiveBusiness();
+    if (!context || context.membership.role !== "OWNER") {
+      return { success: false, error: "Only the Business Owner can update business settings" };
+    }
+
+    await prisma.business.update({
+      where: { id: context.business.id },
+      data: {
+        name,
+        logo: logo || null,
+      },
+    });
+
+    revalidatePath("/dashboard", "layout");
+    return { success: true };
+  } catch (error: any) {
+    if (error.digest?.startsWith("NEXT_REDIRECT")) {
+      throw error;
+    }
+    console.error("updateBusinessBranding failed:", error);
+    return { success: false, error: error.message || "An unexpected error occurred." };
   }
-
-  await prisma.business.update({
-    where: { id: context.business.id },
-    data: {
-      name,
-      logo: logo || null,
-    },
-  });
-
-  revalidatePath("/dashboard", "layout");
 }
 
 /**

@@ -2,6 +2,7 @@
 
 import { updateCar } from "@/actions/car";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import FormSubmitButton from "@/components/FormSubmitButton";
 import { CAR_DATA, GENERIC_VARIANTS } from "@/lib/carData";
 import { compressImage } from "@/lib/image";
@@ -39,6 +40,7 @@ const inputStyle = {
 };
 
 export default function EditCarForm({ car }: EditCarFormProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("Saving vehicle specs updates...");
 
@@ -169,7 +171,13 @@ export default function EditCarForm({ car }: EditCarFormProps) {
         formData.set("fuelType", `${fuel} (${cngFitting})`);
       }
 
-      await updateCar(formData);
+      const res = await updateCar(formData);
+      if (res && res.success) {
+        router.push(`/dashboard/inventory/${car.id}`);
+      } else {
+        alert(res?.error || "Failed to save changes.");
+        setLoading(false);
+      }
     } catch (err: any) {
       console.error("Edit vehicle error:", err);
       alert(err.message || "An error occurred while saving the vehicle. Please check your connection and try again.");

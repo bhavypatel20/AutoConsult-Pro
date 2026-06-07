@@ -35,9 +35,12 @@ export default function DocumentsHubClient({ cars, role }: { cars: any[]; role?:
         return;
       }
       
-      await uploadCarDocument(formData);
-    } catch (err) {
-      alert("Error uploading file");
+      const res = await uploadCarDocument(formData);
+      if (res && !res.success) {
+        alert(res.error || "Error uploading file");
+      }
+    } catch (err: any) {
+      alert(err.message || "Error uploading file");
     } finally {
       setUploadingId(null);
     }

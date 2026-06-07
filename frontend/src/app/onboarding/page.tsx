@@ -81,7 +81,7 @@ function OnboardingWizardContent() {
       if (res?.success) {
         window.location.href = "/dashboard/inventory";
       } else {
-        throw new Error("Failed to initialize business");
+        throw new Error(res?.error || "Failed to initialize business");
       }
     } catch (err: any) {
       alert(err.message || "Failed to create business");
@@ -101,7 +101,7 @@ function OnboardingWizardContent() {
       if (res?.success) {
         window.location.href = "/dashboard/inventory";
       } else {
-        throw new Error("Failed to initialize demo business");
+        throw new Error(res?.error || "Failed to initialize demo business");
       }
     } catch (err: any) {
       alert(err.message || "Failed to create demo business");

@@ -73,8 +73,12 @@ export default function SettingsClient({ business, currentMember }: { business: 
     setBrandingMsg("Saving...");
     const formData = new FormData(e.currentTarget);
     try {
-      await updateBusinessBranding(formData);
-      setBrandingMsg("Branding updated successfully!");
+      const res = await updateBusinessBranding(formData);
+      if (res && res.success) {
+        setBrandingMsg("Branding updated successfully!");
+      } else {
+        setBrandingMsg(`Error: ${res?.error || "Failed to update branding"}`);
+      }
     } catch (err: any) {
       setBrandingMsg(`Error: ${err.message}`);
     } finally {
