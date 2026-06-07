@@ -120,30 +120,9 @@ function OnboardingWizardContent() {
   return (
     <main className="container" style={{ padding: "80px 20px", display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
       {/* Top-Right Sign Out Button */}
-      <div style={{ position: "absolute", top: "24px", right: "24px" }}>
+      <div className="onboarding-signout-container">
         <SignOutButton redirectUrl="/">
-          <button style={{
-            background: "rgba(255, 255, 255, 0.05)",
-            border: "1px solid var(--border-light)",
-            color: "var(--text-muted)",
-            padding: "8px 16px",
-            borderRadius: "10px",
-            fontSize: "0.85rem",
-            fontWeight: 600,
-            cursor: "pointer",
-            transition: "all 0.2s ease"
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(244, 63, 94, 0.1)";
-            e.currentTarget.style.borderColor = "rgba(244, 63, 94, 0.2)";
-            e.currentTarget.style.color = "#f43f5e";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
-            e.currentTarget.style.borderColor = "var(--border-light)";
-            e.currentTarget.style.color = "var(--text-muted)";
-          }}
-          >
+          <button className="onboarding-signout-btn">
             Sign Out
           </button>
         </SignOutButton>

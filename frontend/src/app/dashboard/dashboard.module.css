@@ -125,6 +125,7 @@
   .main {
     padding: 16px;
     margin-bottom: 80px; /* Space for the bottom nav */
+    overflow: visible; /* Prevents clipping of dropdowns like Clerk */
   }
 
   .header {
