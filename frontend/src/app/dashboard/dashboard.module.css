@@ -70,6 +70,10 @@
   margin-bottom: 32px;
 }
 
+.mobileBrand {
+  display: none;
+}
+
 .roleProfile {
   margin-top: auto;
   display: flex;
@@ -125,6 +129,27 @@
 
   .header {
     margin-bottom: 24px;
+  }
+
+  .mobileBrand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mobileLogo {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .mobileName {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-main);
+    font-family: var(--font-outfit), sans-serif;
   }
 
   .roleProfile {

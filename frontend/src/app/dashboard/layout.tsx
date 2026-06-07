@@ -28,7 +28,15 @@ export default async function DashboardLayout({
       />
       <main className={styles.main}>
         <header className={styles.header}>
-          <div /> {/* Spacer */}
+          <div className={styles.mobileBrand}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img 
+              src={business.logo || "/logo.png"} 
+              alt="Business Logo" 
+              className={styles.mobileLogo} 
+            />
+            <span className={styles.mobileName}>{business.name}</span>
+          </div>
           <SafeUserButton />
         </header>
         {children}
