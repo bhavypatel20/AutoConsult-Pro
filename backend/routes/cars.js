@@ -51,6 +51,8 @@ router.post('/', upload.single('image'), async (req, res) => {
     let publicUrl = null;
     if (req.file) {
       publicUrl = `/photos/${req.file.filename}`;
+    } else if (req.body.image) {
+      publicUrl = req.body.image;
     }
 
     const car = await prisma.car.create({
@@ -116,6 +118,8 @@ router.put('/:id', upload.single('image'), async (req, res) => {
 
     if (req.file) {
       updateData.images = `/photos/${req.file.filename}`;
+    } else if (req.body.image) {
+      updateData.images = req.body.image;
     }
 
     const updatedCar = await prisma.car.update({
@@ -135,7 +139,7 @@ router.post('/:id/image', upload.single('file'), async (req, res) => {
     if (!businessId) {
       return res.status(400).json({ error: "businessId body parameter is required" });
     }
-    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+    if (!req.file && !req.body.file) return res.status(400).json({ error: "No file uploaded" });
 
     const car = await prisma.car.findUnique({ where: { id } });
     if (!car) return res.status(404).json({ error: "Car not found" });
@@ -144,7 +148,12 @@ router.post('/:id/image', upload.single('file'), async (req, res) => {
       return res.status(403).json({ error: "Unauthorized: Car does not belong to your business." });
     }
 
-    const publicUrl = `/photos/${req.file.filename}`;
+    let publicUrl = null;
+    if (req.file) {
+      publicUrl = `/photos/${req.file.filename}`;
+    } else if (req.body.file) {
+      publicUrl = req.body.file;
+    }
     
     let newImages = publicUrl;
     if (car.images && car.images.length > 0) {

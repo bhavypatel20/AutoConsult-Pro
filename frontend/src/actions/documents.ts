@@ -15,6 +15,17 @@ export async function uploadCarDocument(formData: FormData) {
 
   formData.append("businessId", context.business.id);
 
+  const file = formData.get("file") as File | null;
+  if (file && file.size > 0) {
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const base64File = buffer.toString("base64");
+    const dataUrl = `data:${file.type};base64,${base64File}`;
+    formData.set("file", dataUrl);
+  } else {
+    formData.delete("file");
+  }
+
   const res = await fetch(`${API_URL}/documents`, {
     method: 'POST',
     headers: {

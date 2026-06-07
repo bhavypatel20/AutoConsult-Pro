@@ -27,7 +27,7 @@ router.post('/', upload.single('file'), async (req, res) => {
     if (!businessId) {
       return res.status(400).json({ error: "businessId body parameter is required" });
     }
-    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+    if (!req.file && !req.body.file) return res.status(400).json({ error: "No file uploaded" });
 
     const car = await prisma.car.findUnique({ where: { id: carId } });
     if (!car) {
@@ -38,7 +38,12 @@ router.post('/', upload.single('file'), async (req, res) => {
       return res.status(403).json({ error: "Unauthorized: Car does not belong to your business." });
     }
 
-    const documentUrl = `/api/documents/${req.file.filename}`;
+    let documentUrl = null;
+    if (req.file) {
+      documentUrl = `/api/documents/${req.file.filename}`;
+    } else if (req.body.file) {
+      documentUrl = req.body.file;
+    }
 
     const updatedCar = await prisma.car.update({
       where: { id: carId },

@@ -19,6 +19,17 @@ export async function uploadCarImage(formData: FormData) {
   const carId = formData.get("carId") as string;
   formData.append("businessId", context.business.id);
 
+  const file = formData.get("file") as File | null;
+  if (file && file.size > 0) {
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const base64Image = buffer.toString("base64");
+    const dataUrl = `data:${file.type};base64,${base64Image}`;
+    formData.set("file", dataUrl);
+  } else {
+    formData.delete("file");
+  }
+
   const res = await fetch(`${API_URL}/cars/${carId}/image`, {
     method: 'POST',
     headers: {
@@ -44,6 +55,17 @@ export async function updateCar(formData: FormData) {
 
   const carId = formData.get("id") as string;
   formData.set("businessId", context.business.id);
+
+  const image = formData.get("image") as File | null;
+  if (image && image.size > 0) {
+    const bytes = await image.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const base64Image = buffer.toString("base64");
+    const dataUrl = `data:${image.type};base64,${base64Image}`;
+    formData.set("image", dataUrl);
+  } else {
+    formData.delete("image");
+  }
 
   const res = await fetch(`${API_URL}/cars/${carId}`, {
     method: 'PUT',
@@ -71,6 +93,17 @@ export async function addCar(formData: FormData) {
   
   formData.append('clerkUserId', context.membership.clerkUserId || "default_user");
   formData.append('businessId', context.business.id);
+
+  const image = formData.get("image") as File | null;
+  if (image && image.size > 0) {
+    const bytes = await image.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const base64Image = buffer.toString("base64");
+    const dataUrl = `data:${image.type};base64,${base64Image}`;
+    formData.set("image", dataUrl);
+  } else {
+    formData.delete("image");
+  }
 
   const res = await fetch(`${API_URL}/cars`, {
     method: 'POST',
