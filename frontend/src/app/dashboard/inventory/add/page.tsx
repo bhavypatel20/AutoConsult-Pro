@@ -28,51 +28,61 @@ export default function AddCarPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    const formData = new FormData(e.currentTarget);
-    
-    // Brand
-    const brandSel = formData.get("brandSelect") as string;
-    if (brandSel === "Other") {
-      formData.set("brand", formData.get("customBrand") as string);
-    } else {
-      formData.set("brand", brandSel);
-    }
+    try {
+      const formData = new FormData(e.currentTarget);
+      
+      // Brand
+      const brandSel = formData.get("brandSelect") as string;
+      if (brandSel === "Other") {
+        formData.set("brand", formData.get("customBrand") as string);
+      } else {
+        formData.set("brand", brandSel);
+      }
 
-    // Model
-    const modelSel = formData.get("modelSelect") as string;
-    if (modelSel === "Other") {
-      formData.set("model", formData.get("customModel") as string);
-    } else if (modelSel) {
-      formData.set("model", modelSel);
-    } else {
-      formData.set("model", formData.get("customModel") as string);
-    }
+      // Model
+      const modelSel = formData.get("modelSelect") as string;
+      if (modelSel === "Other") {
+        formData.set("model", formData.get("customModel") as string);
+      } else if (modelSel) {
+        formData.set("model", modelSel);
+      } else {
+        formData.set("model", formData.get("customModel") as string);
+      }
 
-    // Variant
-    const variantSel = formData.get("variantSelect") as string;
-    if (variantSel === "Other") {
-      formData.set("variant", formData.get("customVariant") as string);
-    } else {
-      formData.set("variant", variantSel);
-    }
-    
-    // Clean up temporary form inputs
-    formData.delete("brandSelect");
-    formData.delete("customBrand");
-    formData.delete("modelSelect");
-    formData.delete("customModel");
-    formData.delete("variantSelect");
-    formData.delete("customVariant");
+      // Variant
+      const variantSel = formData.get("variantSelect") as string;
+      if (variantSel === "Other") {
+        formData.set("variant", formData.get("customVariant") as string);
+      } else {
+        formData.set("variant", variantSel);
+      }
+      
+      // Clean up temporary form inputs
+      formData.delete("brandSelect");
+      formData.delete("customBrand");
+      formData.delete("modelSelect");
+      formData.delete("customModel");
+      formData.delete("variantSelect");
+      formData.delete("customVariant");
 
-    // If CNG or Petrol+CNG is selected, combine with fitting type
-    const fuel = formData.get("fuelType") as string;
-    if (fuel === "CNG" || fuel === "Petrol+CNG") {
-      formData.set("fuelType", `${fuel} (${cngFitting})`);
-    }
+      // If CNG or Petrol+CNG is selected, combine with fitting type
+      const fuel = formData.get("fuelType") as string;
+      if (fuel === "CNG" || fuel === "Petrol+CNG") {
+        formData.set("fuelType", `${fuel} (${cngFitting})`);
+      }
 
-    await addCar(formData);
-    setLoading(false);
-    router.push("/dashboard/inventory");
+      const res = await addCar(formData);
+      if (res && res.success) {
+        router.push("/dashboard/inventory");
+      } else {
+        alert("Failed to save vehicle. Please try again.");
+        setLoading(false);
+      }
+    } catch (err: any) {
+      console.error("Add vehicle error:", err);
+      alert(err.message || "An error occurred while saving the vehicle. Please check your internet connection or try again.");
+      setLoading(false);
+    }
   };
 
   const inputStyle = {
