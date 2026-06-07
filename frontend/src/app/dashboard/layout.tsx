@@ -29,15 +29,36 @@ export default async function DashboardLayout({
       <main className={styles.main}>
         <header className={styles.header}>
           <div className={styles.mobileBrand}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img 
-              src={business.logo || "/logo.png"} 
-              alt="Business Logo" 
-              className={styles.mobileLogo} 
-            />
+            {business.logo ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img 
+                src={business.logo} 
+                alt="Business Logo" 
+                className={styles.mobileLogo} 
+              />
+            ) : (
+              <div style={{ 
+                width: 32, 
+                height: 32, 
+                borderRadius: "50%", 
+                background: "linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 800,
+                fontSize: "0.95rem",
+                color: "#080c14",
+                textTransform: "uppercase",
+                flexShrink: 0
+              }}>
+                {(business.name.split(" ")[0] || "M").charAt(0).toUpperCase()}
+              </div>
+            )}
             <span className={styles.mobileName}>{business.name}</span>
           </div>
-          <SafeUserButton />
+          <div style={{ marginLeft: "auto" }}>
+            <SafeUserButton />
+          </div>
         </header>
         {children}
       </main>

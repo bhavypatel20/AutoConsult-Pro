@@ -18,16 +18,36 @@ export default function Sidebar({ businessName, logoUrl, role, plan = "Trial" }:
   // Helper to split name for two lines if long, or show nicely
   const displayNameFirst = businessName.split(" ")[0] || "My";
   const displayNameRest = businessName.split(" ").slice(1).join(" ") || "Dealership";
+  const firstLetter = displayNameFirst.charAt(0).toUpperCase();
 
   return (
     <aside className={styles.sidebar}>
       <div className={styles.brand} style={{ gap: "12px", fontSize: "1.2rem" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img 
-          src={logoUrl || "/logo.png"} 
-          alt="Business Logo" 
-          style={{ width: 42, height: 42, borderRadius: "50%", objectFit: "cover", background: "rgba(255,255,255,0.05)" }} 
-        />
+        {logoUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img 
+            src={logoUrl} 
+            alt="Business Logo" 
+            style={{ width: 42, height: 42, borderRadius: "50%", objectFit: "cover" }} 
+          />
+        ) : (
+          <div style={{ 
+            width: 42, 
+            height: 42, 
+            borderRadius: "50%", 
+            background: "linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: 800,
+            fontSize: "1.2rem",
+            color: "#080c14",
+            textTransform: "uppercase",
+            flexShrink: 0
+          }}>
+            {firstLetter}
+          </div>
+        )}
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontWeight: 800 }}>{displayNameFirst}</span>
