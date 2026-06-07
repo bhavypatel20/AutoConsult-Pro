@@ -3,6 +3,7 @@
 import { uploadCarDocument } from "@/actions/documents";
 import { FileText, Link as LinkIcon, CheckCircle2, AlertCircle, Download, Upload, Eye } from "lucide-react";
 import { useState } from "react";
+import { compressImage } from "@/lib/image";
 
 export default function DocumentsHubClient({ cars, role }: { cars: any[]; role?: string }) {
   const [uploadingId, setUploadingId] = useState<string | null>(null);
@@ -14,6 +15,26 @@ export default function DocumentsHubClient({ cars, role }: { cars: any[]; role?:
     
     try {
       const formData = new FormData(e.currentTarget);
+      
+      const file = formData.get("file") as File | null;
+      if (file && file.size > 0) {
+        if (file.type.startsWith("image/")) {
+          const compressedBase64 = await compressImage(file);
+          formData.set("file", compressedBase64);
+        } else {
+          // If it's a PDF, verify size is within Vercel's 4.5MB limit
+          if (file.size > 4 * 1024 * 1024) {
+            alert("File is too large. Maximum size allowed is 4MB.");
+            setUploadingId(null);
+            return;
+          }
+        }
+      } else {
+        alert("Please select a file to upload.");
+        setUploadingId(null);
+        return;
+      }
+      
       await uploadCarDocument(formData);
     } catch (err) {
       alert("Error uploading file");

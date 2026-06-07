@@ -2,10 +2,11 @@
 
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createBusiness, uploadLogo } from "@/actions/business";
+import { createBusiness } from "@/actions/business";
 import { Plus, Trash2, Building, Users, Star, ArrowRight, Upload, Loader2, Image as ImageIcon } from "lucide-react";
 import { SignOutButton } from "@clerk/nextjs";
 import AutoLoader from "@/components/AutoLoader";
+import { compressImage } from "@/lib/image";
 
 const inputStyle = {
   width: "100%",
@@ -52,21 +53,12 @@ function OnboardingWizardContent() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image is too large. Maximum size is 5MB.");
-      return;
-    }
-
     setUploadingLogo(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await uploadLogo(formData);
-      if (res?.url) {
-        setLogoUrl(res.url);
-      }
+      const compressedBase64 = await compressImage(file, 800, 800, 0.75);
+      setLogoUrl(compressedBase64);
     } catch (err: any) {
-      alert(err.message || "Failed to upload image");
+      alert(err.message || "Failed to compress logo");
     } finally {
       setUploadingLogo(false);
     }

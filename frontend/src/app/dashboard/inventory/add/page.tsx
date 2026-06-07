@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import AutoLoader from "@/components/AutoLoader";
 import { CAR_DATA, GENERIC_VARIANTS } from "@/lib/carData";
+import { compressImage } from "@/lib/image";
 
 export default function AddCarPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Saving vehicle specs to inventory garage...");
   const [selectedFuelType, setSelectedFuelType] = useState("Petrol");
   const [cngFitting, setCngFitting] = useState("Company Fitted");
   const [registrationNum, setRegistrationNum] = useState("");
@@ -28,9 +30,22 @@ export default function AddCarPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setLoadingMessage("Preparing vehicle specifications...");
     try {
       const formData = new FormData(e.currentTarget);
       
+      // Compress image client-side if uploaded
+      const imageFile = formData.get("image") as File | null;
+      if (imageFile && imageFile.size > 0) {
+        setLoadingMessage("Compressing vehicle photo for fast upload...");
+        const compressedBase64 = await compressImage(imageFile);
+        formData.set("image", compressedBase64);
+      } else {
+        formData.delete("image");
+      }
+
+      setLoadingMessage("Uploading vehicle specs to inventory garage...");
+
       // Brand
       const brandSel = formData.get("brandSelect") as string;
       if (brandSel === "Other") {
@@ -342,7 +357,7 @@ export default function AddCarPage() {
           {loading ? "Saving..." : "Save Vehicle"}
         </button>
       </form>
-      {loading && <AutoLoader fullscreen={true} message="Saving vehicle specs to inventory garage..." />}
+      {loading && <AutoLoader fullscreen={true} message={loadingMessage} />}
     </div>
   );
 }

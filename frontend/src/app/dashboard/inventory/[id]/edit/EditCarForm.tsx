@@ -4,6 +4,8 @@ import { updateCar } from "@/actions/car";
 import { useState } from "react";
 import FormSubmitButton from "@/components/FormSubmitButton";
 import { CAR_DATA, GENERIC_VARIANTS } from "@/lib/carData";
+import { compressImage } from "@/lib/image";
+import AutoLoader from "@/components/AutoLoader";
 
 interface EditCarFormProps {
   car: {
@@ -37,6 +39,9 @@ const inputStyle = {
 };
 
 export default function EditCarForm({ car }: EditCarFormProps) {
+  const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Saving vehicle specs updates...");
+
   // Parse initial fuel type and fitting
   let initialBaseFuel = "Petrol";
   let initialFitting = "Company Fitted";
@@ -106,49 +111,74 @@ export default function EditCarForm({ car }: EditCarFormProps) {
   }
   const variantOptions = activeModelVariants.length > 0 ? activeModelVariants : GENERIC_VARIANTS;
 
-  const handleSubmitAction = async (formData: FormData) => {
-    // Brand
-    const brandSel = formData.get("brandSelect") as string;
-    if (brandSel === "Other") {
-      formData.set("brand", formData.get("customBrand") as string);
-    } else {
-      formData.set("brand", brandSel);
-    }
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setLoadingMessage("Preparing vehicle modifications...");
+    try {
+      const formData = new FormData(e.currentTarget);
 
-    // Model
-    const modelSel = formData.get("modelSelect") as string;
-    if (modelSel === "Other") {
-      formData.set("model", formData.get("customModel") as string);
-    } else if (modelSel) {
-      formData.set("model", modelSel);
-    } else {
-      formData.set("model", formData.get("customModel") as string);
-    }
+      // Compress image client-side if uploaded
+      const imageFile = formData.get("image") as File | null;
+      if (imageFile && imageFile.size > 0) {
+        setLoadingMessage("Compressing vehicle photo for fast update...");
+        const compressedBase64 = await compressImage(imageFile);
+        formData.set("image", compressedBase64);
+      } else {
+        formData.delete("image");
+      }
 
-    // Variant
-    const variantSel = formData.get("variantSelect") as string;
-    if (variantSel === "Other") {
-      formData.set("variant", formData.get("customVariant") as string);
-    } else {
-      formData.set("variant", variantSel);
-    }
-    
-    // Clean up temporary form inputs
-    formData.delete("brandSelect");
-    formData.delete("customBrand");
-    formData.delete("modelSelect");
-    formData.delete("customModel");
-    formData.delete("variantSelect");
-    formData.delete("customVariant");
+      setLoadingMessage("Tuning vehicle profile updates...");
 
-    const fuel = formData.get("fuelType") as string;
-    if (fuel === "CNG" || fuel === "Petrol+CNG") {
-      formData.set("fuelType", `${fuel} (${cngFitting})`);
+      // Brand
+      const brandSel = formData.get("brandSelect") as string;
+      if (brandSel === "Other") {
+        formData.set("brand", formData.get("customBrand") as string);
+      } else {
+        formData.set("brand", brandSel);
+      }
+
+      // Model
+      const modelSel = formData.get("modelSelect") as string;
+      if (modelSel === "Other") {
+        formData.set("model", formData.get("customModel") as string);
+      } else if (modelSel) {
+        formData.set("model", modelSel);
+      } else {
+        formData.set("model", formData.get("customModel") as string);
+      }
+
+      // Variant
+      const variantSel = formData.get("variantSelect") as string;
+      if (variantSel === "Other") {
+        formData.set("variant", formData.get("customVariant") as string);
+      } else {
+        formData.set("variant", variantSel);
+      }
+      
+      // Clean up temporary form inputs
+      formData.delete("brandSelect");
+      formData.delete("customBrand");
+      formData.delete("modelSelect");
+      formData.delete("customModel");
+      formData.delete("variantSelect");
+      formData.delete("customVariant");
+
+      const fuel = formData.get("fuelType") as string;
+      if (fuel === "CNG" || fuel === "Petrol+CNG") {
+        formData.set("fuelType", `${fuel} (${cngFitting})`);
+      }
+
+      await updateCar(formData);
+    } catch (err: any) {
+      console.error("Edit vehicle error:", err);
+      alert(err.message || "An error occurred while saving the vehicle. Please check your connection and try again.");
+      setLoading(false);
     }
-    await updateCar(formData);
   };
+
   return (
-    <form action={handleSubmitAction} className="glass-card" style={{ maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <form onSubmit={handleSubmit} className="glass-card" style={{ maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <input type="hidden" name="id" value={car.id} />
       
       <div className="responsive-grid-2">
@@ -381,11 +411,15 @@ export default function EditCarForm({ car }: EditCarFormProps) {
         </div>
       </div>
 
-      <FormSubmitButton 
-        label="Save Changes" 
-        pendingLabel="Tuning vehicle profile updates..." 
-        style={{ alignSelf: 'flex-start', marginTop: '16px' }} 
-      />
+      <button 
+        type="submit" 
+        disabled={loading} 
+        className="btn-primary" 
+        style={{ alignSelf: 'flex-start', marginTop: '16px' }}
+      >
+        {loading ? "Saving..." : "Save Changes"}
+      </button>
+      {loading && <AutoLoader fullscreen={true} message={loadingMessage} />}
     </form>
   );
 }
