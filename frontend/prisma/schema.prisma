@@ -1,0 +1,272 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Car {
+  id                String    @id @default(uuid())
+  clerkUserId       String
+  brand             String
+  model             String
+  year              Int
+  fuelType          String
+  kmDriven          Int
+  registrationNum   String
+  status            String    @default("Available")
+  ownerType         String?   @default("1st Owner")
+  variant           String?
+  sellerName        String?
+  sellerAddress     String?
+  purchasePrice     Float
+  expectedSellPrice Float
+  finalSellPrice    Float?
+  images            String?
+  documents         String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  businessId        String?
+  business          Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  deals             Deal[]
+  expenses          Expense[]
+  sellerLedgers     SellerLedger[]
+}
+
+model Expense {
+  id          String   @id @default(uuid())
+  carId       String
+  date        DateTime @default(now())
+  amount      Float
+  description String
+  expenseType String
+  paidBy      String   @default("Company")
+  car         Car      @relation(fields: [carId], references: [id])
+}
+
+model Customer {
+  id           String                @id @default(uuid())
+  name         String
+  phone        String
+  address      String?
+  type         String
+  stage        String                @default("Inquiry")
+  notes        String?
+  nextFollowUp DateTime?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  businessId   String?
+  business     Business?             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  inquiries    CustomerInquiry[]
+  interactions CustomerInteraction[]
+  preference   CustomerPreference?
+  deals        Deal[]
+  customerLedgers CustomerLedger[]
+}
+
+model CustomerInquiry {
+  id         String   @id @default(uuid())
+  customerId String
+  createdAt  DateTime @default(now())
+  notes      String?
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model CustomerPreference {
+  id               String   @id @default(uuid())
+  customerId       String   @unique
+  budgetMin        Float?
+  budgetMax        Float?
+  carType          String?
+  preferredBrands  String?
+  fuelType         String?
+  minYear          Int?
+  maxKmDriven      Int?
+  purpose          String?
+  usageType        String?
+  familySize       Int?
+  seatingCapacity  Int?
+  paymentMode      String?
+  loanRequired     Boolean  @default(false)
+  downPayment      Float?
+  exchangeRequired Boolean  @default(false)
+  priority         String?
+  visitCount       Int      @default(0)
+  lastVisitDate    DateTime @default(now())
+  customer         Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model CustomerInteraction {
+  id         String   @id @default(uuid())
+  customerId String
+  carId      String?
+  type       String
+  date       DateTime @default(now())
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model Deal {
+  id             String    @id @default(uuid())
+  customerId     String
+  carId          String
+  dealDate       DateTime  @default(now())
+  finalPrice     Float
+  paymentStatus  String    @default("Pending")
+  agreementFiles String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  businessId     String?
+  business       Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  car            Car       @relation(fields: [carId], references: [id])
+  customer       Customer  @relation(fields: [customerId], references: [id])
+}
+
+model Business {
+  id                 String           @id @default(uuid())
+  name               String
+  logo               String?
+  ownerId            String
+  plan               String           @default("Trial")
+  subscriptionStatus String           @default("Active")
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  members            BusinessMember[]
+  cars               Car[]
+  customers          Customer[]
+  deals              Deal[]
+  partners           Partner[]
+  bankAccounts       BankAccount[]
+  transactions       Transaction[]
+  customerLedgers    CustomerLedger[]
+  sellerLedgers      SellerLedger[]
+  incomeEntries      IncomeEntry[]
+  expenseEntries     ExpenseEntry[]
+}
+
+model BusinessMember {
+  id          String   @id @default(uuid())
+  businessId  String
+  name        String
+  email       String?
+  clerkUserId String?
+  role        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, email])
+  @@unique([businessId, clerkUserId])
+}
+
+model Partner {
+  id               String          @id @default(uuid())
+  businessId       String?
+  business         Business?       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name             String
+  phone            String
+  email            String
+  address          String?
+  ownershipPercent Float?
+  isActive         Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  ledgerEntries    PartnerLedger[]
+}
+
+model PartnerLedger {
+  id          String   @id @default(uuid())
+  businessId  String?
+  partnerId   String
+  partner     Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  date        DateTime @default(now())
+  type        String   // CAPITAL_INVESTMENT, CAPITAL_RETURN, EXPENSE_PAID_BY_PARTNER, PROFIT_SHARE, WITHDRAWAL, ADJUSTMENT
+  amount      Float
+  notes       String?
+  carId       String?  // Linked car (optional)
+}
+
+model BankAccount {
+  id            String   @id @default(uuid())
+  businessId    String?
+  business      Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name          String   // e.g. Cash, HDFC, ICICI, SBI
+  accountNumber String?
+  balance       Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Transaction {
+  id              String   @id @default(uuid())
+  transactionNum String   @unique
+  businessId      String?
+  business        Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  date            DateTime @default(now())
+  type            String   // PARTNER_INVESTMENT, CUSTOMER_PAYMENT, SELLER_PAYMENT, EXPENSE, INCOME, WITHDRAWAL, CAPITAL_RETURN, TRANSFER
+  amount          Float
+  paymentMode     String   // CASH, UPI, BANK_TRANSFER, CHEQUE
+  fromAccountId   String?  // BankAccount ID (optional)
+  toAccountId     String?  // BankAccount ID (optional)
+  relatedEntityId String? // e.g. Customer ID, Partner ID, Car ID (optional)
+  notes           String?
+  createdBy       String?  // User who made it
+}
+
+model CustomerLedger {
+  id              String   @id @default(uuid())
+  businessId      String?
+  business        Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customerId      String
+  customer        Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  dealId          String?
+  totalAmount     Float
+  advanceReceived Float    @default(0)
+  remainingAmount Float
+  dueDate         DateTime?
+  status          String   @default("Pending") // Pending, Partial, Completed
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model SellerLedger {
+  id                  String   @id @default(uuid())
+  businessId          String?
+  business            Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  carId               String
+  car                 Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+  sellerName          String
+  totalPurchaseAmount Float
+  paidAmount          Float    @default(0)
+  pendingAmount       Float
+  status              String   @default("Pending") // Pending, Partial, Completed
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model IncomeEntry {
+  id          String   @id @default(uuid())
+  businessId  String?
+  business    Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  date        DateTime @default(now())
+  amount      Float
+  category    String   // CAR_COMMISSION, CONSULTANCY_FEES, LOAN_COMMISSION, INSURANCE_COMMISSION, DOCUMENTATION_CHARGES, OTHER
+  paymentMode String   // CASH, UPI, BANK_TRANSFER, CHEQUE
+  accountId   String?  // BankAccount ID (optional)
+  notes       String?
+}
+
+model ExpenseEntry {
+  id          String   @id @default(uuid())
+  businessId  String?
+  business    Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  date        DateTime @default(now())
+  amount      Float
+  category    String   // OFFICE_RENT, ELECTRICITY, SALARY, FUEL, MARKETING, INTERNET, REPAIR, TRAVEL, MISCELLANEOUS
+  paidBy      String   // Company, Partner
+  partnerId   String?  // Partner relationship (optional)
+  carId       String?  // Linked car (optional)
+  billUrl     String?  // Uploaded bill URL (optional)
+  notes       String?
+}
