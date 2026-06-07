@@ -63,7 +63,7 @@ router.get('/summary', async (req, res) => {
 
 router.post('/expense', async (req, res) => {
   try {
-    const { carId, amount, description, expenseType, paidBy, businessId } = req.body;
+    const { carId, amount, description, expenseType, paidBy, businessId, date } = req.body;
     if (!businessId) {
       return res.status(400).json({ error: "businessId body parameter is required" });
     }
@@ -78,6 +78,7 @@ router.post('/expense', async (req, res) => {
     }
 
     const parsedAmount = parseFloat(amount);
+    const customDate = date ? new Date(date) : undefined;
 
     // 1. Create the legacy Expense record
     const expense = await prisma.expense.create({
@@ -87,6 +88,7 @@ router.post('/expense', async (req, res) => {
         description,
         expenseType,
         paidBy,
+        date: customDate,
       },
     });
 
@@ -119,6 +121,7 @@ router.post('/expense', async (req, res) => {
           paymentMode: 'CASH',
           fromAccountId: cashAccount.id,
           relatedEntityId: carId,
+          date: customDate,
           notes: `Vehicle Expense (${expenseType}) for ${car.brand} ${car.model}: ${description || ''}`
         }
       });
@@ -136,7 +139,8 @@ router.post('/expense', async (req, res) => {
             type: 'EXPENSE_PAID_BY_PARTNER',
             amount: parsedAmount,
             notes: `Vehicle Expense (${expenseType}) for ${car.brand} ${car.model} paid by partner. Notes: ${description || ''}`,
-            carId: carId
+            carId: carId,
+            date: customDate,
           }
         });
 
@@ -149,6 +153,7 @@ router.post('/expense', async (req, res) => {
             amount: parsedAmount,
             paymentMode: 'CASH',
             relatedEntityId: partner.id,
+            date: customDate,
             notes: `Vehicle Expense (${expenseType}) paid personally by partner ${paidBy}`
           }
         });
@@ -164,6 +169,7 @@ router.post('/expense', async (req, res) => {
         paidBy: paidBy === 'Company' ? 'Company' : 'Partner',
         partnerId: paidBy !== 'Company' ? (await prisma.partner.findFirst({ where: { businessId, name: paidBy } }))?.id || null : null,
         carId,
+        date: customDate,
         notes: `Vehicle Expense: ${description || ''}`
       }
     });
@@ -176,7 +182,7 @@ router.post('/expense', async (req, res) => {
 
 router.post('/deal', async (req, res) => {
   try {
-    const { customerId, carId, finalPrice, paymentStatus, businessId, dealDate } = req.body;
+    const { customerId, carId, finalPrice, paymentStatus, businessId, dealDate, receivedAmount, paymentDate, paymentMode, bankAccountId } = req.body;
     if (!businessId) {
       return res.status(400).json({ error: "businessId body parameter is required" });
     }
@@ -198,11 +204,15 @@ router.post('/deal', async (req, res) => {
       return res.status(403).json({ error: "Unauthorized: Customer does not belong to your business." });
     }
 
+    const parsedPrice = parseFloat(finalPrice);
+    const parsedReceived = receivedAmount !== undefined && receivedAmount !== "" ? parseFloat(receivedAmount) : 0;
+    const remaining = Math.max(0, parsedPrice - parsedReceived);
+
     const deal = await prisma.deal.create({
       data: {
         customerId,
         carId,
-        finalPrice: parseFloat(finalPrice),
+        finalPrice: parsedPrice,
         paymentStatus,
         businessId: businessId,
         dealDate: dealDate ? new Date(dealDate) : new Date(),
@@ -211,13 +221,75 @@ router.post('/deal', async (req, res) => {
 
     await prisma.car.update({
       where: { id: carId },
-      data: { status: "Sold", finalSellPrice: parseFloat(finalPrice) },
+      data: { status: "Sold", finalSellPrice: parsedPrice },
     });
 
     await prisma.customer.update({
       where: { id: customerId },
       data: { stage: "Deal Closed" },
     });
+
+    // 1. Immediately create a CustomerLedger
+    let ledgerStatus = 'Pending';
+    if (paymentStatus === 'Paid' || remaining <= 0) {
+      ledgerStatus = 'Completed';
+    } else if (parsedReceived > 0) {
+      ledgerStatus = 'Partial';
+    }
+
+    const ledger = await prisma.customerLedger.create({
+      data: {
+        businessId,
+        customerId,
+        dealId: deal.id,
+        totalAmount: parsedPrice,
+        advanceReceived: parsedReceived,
+        remainingAmount: remaining,
+        status: ledgerStatus,
+      }
+    });
+
+    // 2. If receivedAmount > 0, log a master transaction and update bank balance
+    if (parsedReceived > 0) {
+      let targetAccountId = bankAccountId || null;
+      if (!targetAccountId) {
+        // Fallback: Default Cash Account
+        let cashAccount = await prisma.bankAccount.findFirst({
+          where: { businessId, name: "Cash" }
+        });
+        if (!cashAccount) {
+          cashAccount = await prisma.bankAccount.create({
+            data: { businessId, name: "Cash", balance: 0 }
+          });
+        }
+        targetAccountId = cashAccount.id;
+      }
+
+      // Update BankAccount balance
+      const account = await prisma.bankAccount.findUnique({ where: { id: targetAccountId } });
+      if (account && account.businessId === businessId) {
+        await prisma.bankAccount.update({
+          where: { id: targetAccountId },
+          data: { balance: account.balance + parsedReceived }
+        });
+      }
+
+      // Create transaction
+      const txnNum = await generateTxnNum(businessId);
+      await prisma.transaction.create({
+        data: {
+          transactionNum: txnNum,
+          businessId,
+          type: 'CUSTOMER_PAYMENT',
+          amount: parsedReceived,
+          paymentMode: paymentMode || 'CASH',
+          toAccountId: targetAccountId,
+          relatedEntityId: customerId,
+          date: paymentDate ? new Date(paymentDate) : (dealDate ? new Date(dealDate) : new Date()),
+          notes: `Down payment / installment received upon closing deal for ${car.brand} ${car.model}.`
+        }
+      });
+    }
 
     res.status(201).json(deal);
   } catch (error) {

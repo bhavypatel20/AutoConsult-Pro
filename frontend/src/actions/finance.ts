@@ -47,31 +47,39 @@ export async function addExpense(formData: FormData) {
 
 export async function addDeal(formData: FormData) {
   await delay(1500);
-  const context = await getActiveBusiness();
-  if (!context) redirect("/onboarding");
-  if (context.membership.role === "PARTNER_VIEW") {
-    throw new Error("Unauthorized: View-only partners cannot add deals.");
+  try {
+    const context = await getActiveBusiness();
+    if (!context) redirect("/onboarding");
+    if (context.membership.role === "PARTNER_VIEW") {
+      return { success: false, error: "Unauthorized: View-only partners cannot add deals." };
+    }
+
+    const payload = formDataToJson(formData);
+    payload.businessId = context.business.id;
+
+    const res = await fetch(`${API_URL}/finance/deal`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.BACKEND_API_KEY}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      return { success: false, error: errorData.error || "Failed to add deal" };
+    }
+
+    revalidatePath("/dashboard/deals");
+    return { success: true };
+  } catch (error: any) {
+    if (error.digest?.startsWith("NEXT_REDIRECT")) {
+      throw error;
+    }
+    console.error("addDeal failed:", error);
+    return { success: false, error: error.message || "An unexpected error occurred." };
   }
-
-  const payload = formDataToJson(formData);
-  payload.businessId = context.business.id;
-
-  const res = await fetch(`${API_URL}/finance/deal`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.BACKEND_API_KEY}`
-    },
-    body: JSON.stringify(payload)
-  });
-
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.error || "Failed to add deal");
-  }
-
-  revalidatePath("/dashboard/deals");
-  redirect("/dashboard/deals");
 }
 
 export async function getFinancialSummary() {

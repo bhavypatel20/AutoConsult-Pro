@@ -85,18 +85,36 @@ export default function AddExpenseForm({ cars, partners }: AddExpenseFormProps) 
         </label>
       )}
 
-      {partners.length > 1 ? (
-        <label>Paid By (Partner Tracked)
-            <select name="paidBy" required style={{...inputStyle, WebkitAppearance: 'none', background: 'rgba(245, 158, 11, 0.05)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.3)'}}>
-              <option value="Company">Company Account (Default)</option>
-              {partners.map((partner) => (
-                <option key={partner.id} value={partner.name}>{partner.name}</option>
-              ))}
-            </select>
+      <div className="responsive-grid-2">
+        {partners.length > 1 ? (
+          <label style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <span>Paid By (Partner Tracked)</span>
+              <select name="paidBy" required style={{...inputStyle, WebkitAppearance: 'none', background: 'rgba(245, 158, 11, 0.05)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.3)'}}>
+                <option value="Company">Company Account (Default)</option>
+                {partners.map((partner) => (
+                  <option key={partner.id} value={partner.name}>{partner.name}</option>
+                ))}
+              </select>
+          </label>
+        ) : (
+          <label style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <span>Paid By</span>
+              <select name="paidBy" required style={{...inputStyle, WebkitAppearance: 'none'}}>
+                <option value="Company">Company Account (Default)</option>
+              </select>
+          </label>
+        )}
+        <label style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <span>Transaction Date</span>
+          <input 
+            type="date" 
+            name="date" 
+            required 
+            defaultValue={new Date().toISOString().split('T')[0]} 
+            style={inputStyle} 
+          />
         </label>
-      ) : (
-        <input type="hidden" name="paidBy" value="Company" />
-      )}
+      </div>
 
       <label>Description <br/><textarea name="description" rows={3} style={{...inputStyle, resize: 'vertical'}} placeholder="What was the expense for?" /></label>
 
