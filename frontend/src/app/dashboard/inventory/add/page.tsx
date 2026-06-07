@@ -90,7 +90,7 @@ export default function AddCarPage() {
       if (res && res.success) {
         router.push("/dashboard/inventory");
       } else {
-        alert("Failed to save vehicle. Please try again.");
+        alert(res?.error || "Failed to save vehicle. Please try again.");
         setLoading(false);
       }
     } catch (err: any) {
