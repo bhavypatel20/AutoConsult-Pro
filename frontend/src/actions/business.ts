@@ -381,7 +381,6 @@ export async function updatePartnerRole(memberId: string, role: string) {
  * Server Action to upload a business logo from a client device.
  */
 export async function uploadLogo(formData: FormData) {
-  await delay(1500);
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
@@ -397,23 +396,10 @@ export async function uploadLogo(formData: FormData) {
 
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
+  const base64Image = buffer.toString("base64");
+  const dataUrl = `data:${file.type};base64,${base64Image}`;
 
-  const uploadDir = path.join(process.cwd(), "public", "logos");
-
-  // Ensure upload directory exists
-  try {
-    await fs.access(uploadDir);
-  } catch {
-    await fs.mkdir(uploadDir, { recursive: true });
-  }
-
-  const fileExtension = file.name.split(".").pop();
-  const safeName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExtension}`;
-  const filePath = path.join(uploadDir, safeName);
-
-  await fs.writeFile(filePath, buffer);
-
-  return { url: `/logos/${safeName}` };
+  return { url: dataUrl };
 }
 
 /**
