@@ -156,31 +156,40 @@ export async function deleteExpense(expenseId: string) {
 
 export async function editDeal(formData: FormData) {
   await delay(1000);
-  const context = await getActiveBusiness();
-  if (!context) redirect("/onboarding");
-  if (context.membership.role === "PARTNER_VIEW") {
-    throw new Error("Unauthorized: View-only partners cannot edit deals.");
+  try {
+    const context = await getActiveBusiness();
+    if (!context) redirect("/onboarding");
+    if (context.membership.role === "PARTNER_VIEW") {
+      return { success: false, error: "Unauthorized: View-only partners cannot edit deals." };
+    }
+
+    const id = formData.get("id") as string;
+    const payload = formDataToJson(formData);
+    payload.businessId = context.business.id;
+
+    const res = await fetch(`${API_URL}/finance/deal/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.BACKEND_API_KEY}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      return { success: false, error: errorData.error || "Failed to edit deal" };
+    }
+
+    revalidatePath("/dashboard/deals");
+    return { success: true };
+  } catch (error: any) {
+    if (error.digest?.startsWith("NEXT_REDIRECT")) {
+      throw error;
+    }
+    console.error("editDeal failed:", error);
+    return { success: false, error: error.message || "An unexpected error occurred." };
   }
-
-  const id = formData.get("id") as string;
-  const payload = formDataToJson(formData);
-  payload.businessId = context.business.id;
-
-  const res = await fetch(`${API_URL}/finance/deal/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.BACKEND_API_KEY}`
-    },
-    body: JSON.stringify(payload)
-  });
-
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.error || "Failed to edit deal");
-  }
-
-  revalidatePath("/dashboard/deals");
 }
 
 export async function deleteDeal(dealId: string) {

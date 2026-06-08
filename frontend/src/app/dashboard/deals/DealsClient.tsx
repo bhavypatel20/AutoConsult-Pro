@@ -25,6 +25,7 @@ interface Deal {
   dealDate: string;
   finalPrice: number;
   paymentStatus: string;
+  advanceReceived: number;
   car: Car;
   customer: Customer;
 }
@@ -44,6 +45,12 @@ interface Member {
   name: string;
 }
 
+interface BankAccount {
+  id: string;
+  name: string;
+  balance: number;
+}
+
 interface DealsClientProps {
   deals: Deal[];
   expenses: Expense[];
@@ -51,6 +58,7 @@ interface DealsClientProps {
   isReadOnly: boolean;
   businessName: string;
   businessLogo: string | null;
+  bankAccounts: BankAccount[];
 }
 
 const inputStyle = {
@@ -64,6 +72,18 @@ const inputStyle = {
   outline: 'none'
 };
 
+const selectStyle = {
+  ...inputStyle,
+  WebkitAppearance: 'none' as any,
+  MozAppearance: 'none' as any,
+  appearance: 'none' as any,
+  backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'right 16px center',
+  backgroundSize: '16px',
+  paddingRight: '40px'
+};
+
 const cancelBtnStyle = {
   padding: '10px 20px',
   borderRadius: '99px',
@@ -75,8 +95,9 @@ const cancelBtnStyle = {
   fontSize: '0.9rem'
 };
 
-export default function DealsClient({ deals, expenses, members, isReadOnly, businessName, businessLogo }: DealsClientProps) {
+export default function DealsClient({ deals, expenses, members, isReadOnly, businessName, businessLogo, bankAccounts }: DealsClientProps) {
   const [isPending, startTransition] = useTransition();
+  const unpaidDeals = deals.filter(deal => deal.paymentStatus !== 'Paid');
   
   // Modals / Editing States
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -91,6 +112,8 @@ export default function DealsClient({ deals, expenses, members, isReadOnly, busi
 
   const standardTypes = ["Repair", "Service", "Transport", "RTO", "Fuel"];
 
+  const [editPaymentStatus, setEditPaymentStatus] = useState("Pending");
+
   useEffect(() => {
     if (editingExpense) {
       const isStandard = standardTypes.includes(editingExpense.expenseType);
@@ -103,6 +126,12 @@ export default function DealsClient({ deals, expenses, members, isReadOnly, busi
       }
     }
   }, [editingExpense]);
+
+  useEffect(() => {
+    if (editingDeal) {
+      setEditPaymentStatus(editingDeal.paymentStatus);
+    }
+  }, [editingDeal]);
 
   // Submit Handlers
   const handleEditExpense = (e: React.FormEvent<HTMLFormElement>) => {
@@ -134,8 +163,12 @@ export default function DealsClient({ deals, expenses, members, isReadOnly, busi
     const formData = new FormData(e.currentTarget);
     startTransition(async () => {
       try {
-        await editDeal(formData);
-        setEditingDeal(null);
+        const res = await editDeal(formData);
+        if (res && !res.success) {
+          alert(res.error || "Failed to update deal");
+        } else {
+          setEditingDeal(null);
+        }
       } catch (err: any) {
         alert(err.message || "Failed to update deal");
       }
@@ -155,6 +188,30 @@ export default function DealsClient({ deals, expenses, members, isReadOnly, busi
 
   return (
     <>
+      {unpaidDeals.length > 0 && (
+        <div className="glass-card" style={{
+          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(239, 68, 68, 0.08))',
+          border: '1px solid rgba(245, 158, 11, 0.25)',
+          borderLeft: '4px solid #f59e0b',
+          padding: '20px 24px',
+          borderRadius: '16px',
+          marginBottom: '28px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px'
+        }}>
+          <div style={{ color: '#f59e0b', display: 'flex', alignItems: 'center' }}>
+            <AlertTriangle size={24} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <h4 style={{ margin: '0 0 4px 0', color: 'var(--text-main)', fontSize: '1rem', fontWeight: 600 }}>Outstanding Installment Payments</h4>
+            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+              There {unpaidDeals.length === 1 ? 'is 1 vehicle' : `are ${unpaidDeals.length} vehicles`} with outstanding balances or pending payments. Please review customer ledgers to log incoming installments.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* 1. Closed Deals Section */}
       <h3 style={{ marginBottom: '16px' }}>Recent Closed Deals</h3>
       {deals.length === 0 ? (
@@ -424,11 +481,64 @@ export default function DealsClient({ deals, expenses, members, isReadOnly, busi
               </div>
 
               <label style={{ fontSize: '0.9rem' }}>Payment Status
-                <select name="paymentStatus" required defaultValue={editingDeal.paymentStatus} style={{...inputStyle, WebkitAppearance: 'none'}}>
+                <select 
+                  name="paymentStatus" 
+                  required 
+                  value={editPaymentStatus} 
+                  onChange={(e) => setEditPaymentStatus(e.target.value)} 
+                  style={selectStyle}
+                >
                   <option value="Paid">Paid</option>
+                  <option value="Partial">Partial</option>
                   <option value="Pending">Pending</option>
                 </select>
               </label>
+
+              {(editPaymentStatus === 'Partial' || editPaymentStatus === 'Paid') && (
+                <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '12px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <label style={{ fontSize: '0.9rem', margin: 0 }}>Amount Received (₹)
+                    <input 
+                      type="number" 
+                      name="receivedAmount" 
+                      required 
+                      defaultValue={editingDeal.advanceReceived || 0} 
+                      style={inputStyle} 
+                    />
+                  </label>
+                  
+                  <div style={{ fontSize: '0.8rem', color: 'var(--primary)', borderTop: '1px dashed var(--border-light)', paddingTop: '12px', marginTop: '4px' }}>
+                    Installment Payment Details (if amount is updated)
+                  </div>
+                  
+                  <div className="responsive-grid-2">
+                    <label style={{ fontSize: '0.9rem', margin: 0 }}>Payment Date
+                      <input 
+                        type="date" 
+                        name="paymentDate" 
+                        defaultValue={new Date().toISOString().substring(0, 10)} 
+                        style={inputStyle} 
+                      />
+                    </label>
+                    <label style={{ fontSize: '0.9rem', margin: 0 }}>Payment Mode
+                      <select name="paymentMode" defaultValue="CASH" style={selectStyle}>
+                        <option value="CASH">Cash</option>
+                        <option value="UPI">UPI (GPay / PhonePe / Paytm)</option>
+                        <option value="BANK_TRANSFER">Bank Transfer (IMPS / NEFT)</option>
+                        <option value="CHEQUE">Cheque</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <label style={{ fontSize: '0.9rem', margin: 0 }}>Received Into Account
+                    <select name="bankAccountId" defaultValue="" style={selectStyle}>
+                      <option value="" disabled>Select account...</option>
+                      {bankAccounts.map((acc) => (
+                        <option key={acc.id} value={acc.id}>{acc.name} (Bal: ₹{acc.balance})</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              )}
 
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '12px' }}>
                 <button type="button" onClick={() => setEditingDeal(null)} style={cancelBtnStyle}>Cancel</button>

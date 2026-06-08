@@ -49,13 +49,25 @@ router.get('/summary', async (req, res) => {
       orderBy: { createdAt: "desc" }
     });
 
+    const ledgers = await prisma.customerLedger.findMany({
+      where: { businessId }
+    });
+
+    const dealsWithLedger = deals.map(deal => {
+      const ledger = ledgers.find(l => l.dealId === deal.id);
+      return {
+        ...deal,
+        advanceReceived: ledger ? ledger.advanceReceived : 0
+      };
+    });
+
     const expenses = await prisma.expense.findMany({
       where: { car: { businessId } },
       include: { car: true },
       orderBy: { date: "desc" }
     });
 
-    res.json({ deals, expenses });
+    res.json({ deals: dealsWithLedger, expenses });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -512,10 +524,18 @@ router.put('/deal/:id', async (req, res) => {
       return res.status(403).json({ error: "Unauthorized: Deal does not belong to your business." });
     }
 
+    const parsedPrice = parseFloat(finalPrice);
+    let parsedReceived = 0;
+    if (paymentStatus === 'Paid') {
+      parsedReceived = parsedPrice;
+    } else if (paymentStatus === 'Partial') {
+      parsedReceived = parseFloat(req.body.receivedAmount) || 0;
+    }
+
     const updatedDeal = await prisma.deal.update({
       where: { id },
       data: {
-        finalPrice: parseFloat(finalPrice),
+        finalPrice: parsedPrice,
         paymentStatus,
         dealDate: dealDate ? new Date(dealDate) : undefined,
       },
@@ -524,8 +544,118 @@ router.put('/deal/:id', async (req, res) => {
     // Sync finalSellPrice on associated Car
     await prisma.car.update({
       where: { id: deal.carId },
-      data: { finalSellPrice: parseFloat(finalPrice) }
+      data: { finalSellPrice: parsedPrice }
     });
+
+    // Update CustomerLedger
+    const remaining = Math.max(0, parsedPrice - parsedReceived);
+    let ledgerStatus = 'Pending';
+    if (paymentStatus === 'Paid' || remaining <= 0) {
+      ledgerStatus = 'Completed';
+    } else if (parsedReceived > 0) {
+      ledgerStatus = 'Partial';
+    }
+
+    const ledger = await prisma.customerLedger.findFirst({
+      where: { dealId: id }
+    });
+
+    const oldReceived = ledger ? ledger.advanceReceived : 0;
+    const increment = parsedReceived - oldReceived;
+
+    if (ledger) {
+      await prisma.customerLedger.update({
+        where: { id: ledger.id },
+        data: {
+          totalAmount: parsedPrice,
+          advanceReceived: parsedReceived,
+          remainingAmount: remaining,
+          status: ledgerStatus,
+          customerId: deal.customerId
+        }
+      });
+    } else {
+      await prisma.customerLedger.create({
+        data: {
+          businessId,
+          customerId: deal.customerId,
+          dealId: id,
+          totalAmount: parsedPrice,
+          advanceReceived: parsedReceived,
+          remainingAmount: remaining,
+          status: ledgerStatus,
+        }
+      });
+    }
+
+    // Process bank account updates and transaction logs if payment amount has changed
+    if (increment > 0) {
+      const { paymentDate, paymentMode, bankAccountId } = req.body;
+      let targetAccountId = bankAccountId || null;
+      if (!targetAccountId) {
+        // Fallback: Default Cash Account
+        let cashAccount = await prisma.bankAccount.findFirst({
+          where: { businessId, name: "Cash" }
+        });
+        if (!cashAccount) {
+          cashAccount = await prisma.bankAccount.create({
+            data: { businessId, name: "Cash", balance: 0 }
+          });
+        }
+        targetAccountId = cashAccount.id;
+      }
+
+      // Update BankAccount balance
+      const account = await prisma.bankAccount.findUnique({ where: { id: targetAccountId } });
+      if (account && account.businessId === businessId) {
+        await prisma.bankAccount.update({
+          where: { id: targetAccountId },
+          data: { balance: account.balance + increment }
+        });
+      }
+
+      // Create transaction
+      const txnNum = await generateTxnNum(businessId);
+      const car = await prisma.car.findUnique({ where: { id: deal.carId } });
+      await prisma.transaction.create({
+        data: {
+          transactionNum: txnNum,
+          businessId,
+          type: 'CUSTOMER_PAYMENT',
+          amount: increment,
+          paymentMode: paymentMode || 'CASH',
+          toAccountId: targetAccountId,
+          relatedEntityId: deal.customerId,
+          date: paymentDate ? new Date(paymentDate) : new Date(),
+          notes: `Installment received for ${car ? (car.brand + ' ' + car.model) : 'vehicle'}.`
+        }
+      });
+    } else if (increment < 0) {
+      const decrement = Math.abs(increment);
+      let cashAccount = await prisma.bankAccount.findFirst({
+        where: { businessId, name: "Cash" }
+      });
+      if (cashAccount) {
+        await prisma.bankAccount.update({
+          where: { id: cashAccount.id },
+          data: { balance: cashAccount.balance - decrement }
+        });
+      }
+
+      const txnNum = await generateTxnNum(businessId);
+      await prisma.transaction.create({
+        data: {
+          transactionNum: txnNum,
+          businessId,
+          type: 'CUSTOMER_PAYMENT',
+          amount: -decrement,
+          paymentMode: 'CASH',
+          relatedEntityId: deal.customerId,
+          date: new Date(),
+          notes: `Adjustment correction for deal payment change.`
+        }
+      });
+    }
 
     res.json(updatedDeal);
   } catch (error) {

@@ -42,6 +42,7 @@ export default async function DealsPage() {
     dealDate: new Date(deal.dealDate).toISOString(),
     finalPrice: deal.finalPrice,
     paymentStatus: deal.paymentStatus,
+    advanceReceived: deal.advanceReceived || 0,
     car: {
       id: deal.car.id,
       brand: deal.car.brand,
@@ -83,6 +84,16 @@ export default async function DealsPage() {
   const serializedMembers = partners.map((p: any) => ({
     id: p.id,
     name: p.name,
+  }));
+
+  const bankAccounts = await prisma.bankAccount.findMany({
+    where: { businessId: context.business.id }
+  });
+
+  const serializedBankAccounts = bankAccounts.map((acc: any) => ({
+    id: acc.id,
+    name: acc.name,
+    balance: acc.balance
   }));
 
   return (
@@ -145,6 +156,7 @@ export default async function DealsPage() {
         isReadOnly={isReadOnly} 
         businessName={context.business.name}
         businessLogo={context.business.logo}
+        bankAccounts={serializedBankAccounts}
       />
     </div>
   );

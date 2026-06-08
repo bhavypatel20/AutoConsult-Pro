@@ -58,6 +58,8 @@ export default function CloseDealForm({ cars, customers, bankAccounts }: CloseDe
       setReceivedAmount(finalPrice);
     } else if (paymentStatus === "Pending") {
       setReceivedAmount("0");
+    } else if (paymentStatus === "Partial") {
+      setReceivedAmount(""); // Clear so they can easily enter the first installment/advance amount
     }
   }, [paymentStatus, finalPrice]);
 
