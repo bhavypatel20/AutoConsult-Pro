@@ -494,3 +494,49 @@ export async function getReportData(year?: string, month?: string) {
     };
   }
 }
+
+export async function deleteIncomeEntry(id: string) {
+  const context = await getActiveBusiness();
+  if (!context) redirect("/onboarding");
+  if (context.membership.role !== "OWNER") {
+    throw new Error("Unauthorized: Only owners can delete income entries.");
+  }
+
+  const res = await fetch(`${API_URL}/erp/income/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${process.env.BACKEND_API_KEY}`
+    }
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.error || "Failed to delete income entry");
+  }
+
+  revalidatePath("/dashboard/finance");
+  revalidatePath("/dashboard");
+}
+
+export async function deleteExpenseEntry(id: string) {
+  const context = await getActiveBusiness();
+  if (!context) redirect("/onboarding");
+  if (context.membership.role !== "OWNER") {
+    throw new Error("Unauthorized: Only owners can delete expense entries.");
+  }
+
+  const res = await fetch(`${API_URL}/erp/expenses/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${process.env.BACKEND_API_KEY}`
+    }
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.error || "Failed to delete expense entry");
+  }
+
+  revalidatePath("/dashboard/finance");
+  revalidatePath("/dashboard");
+}

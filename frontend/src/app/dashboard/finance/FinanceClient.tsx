@@ -20,6 +20,7 @@ import {
   IndianRupee,
   X,
   ShieldAlert,
+  Trash2,
 } from "lucide-react";
 import {
   createPartner,
@@ -31,6 +32,8 @@ import {
   addSellerPayment,
   createIncomeEntry,
   createExpenseEntry,
+  deleteIncomeEntry,
+  deleteExpenseEntry,
 } from "@/actions/erp";
 import SearchableCarSelect from "@/components/SearchableCarSelect";
 
@@ -268,6 +271,30 @@ export default function FinanceClient({
   const [expenseCategory, setExpenseCategory] = useState("RENT");
   const [customExpenseCategory, setCustomExpenseCategory] = useState("");
   const [selectedCarId, setSelectedCarId] = useState("");
+
+  const handleDeleteIncome = (id: string) => {
+    if (confirm("Are you sure you want to delete this income entry? This will reverse the transaction and bank account balance.")) {
+      startTransition(async () => {
+        try {
+          await deleteIncomeEntry(id);
+        } catch (err: any) {
+          alert(err.message || "Failed to delete income entry");
+        }
+      });
+    }
+  };
+
+  const handleDeleteExpense = (id: string) => {
+    if (confirm("Are you sure you want to delete this expense entry? This will reverse the transaction, bank account balance, or partner ledger, and any car expense attached.")) {
+      startTransition(async () => {
+        try {
+          await deleteExpenseEntry(id);
+        } catch (err: any) {
+          alert(err.message || "Failed to delete expense entry");
+        }
+      });
+    }
+  };
 
   React.useEffect(() => {
     if (activeModal !== "log-expense") {
@@ -573,6 +600,7 @@ export default function FinanceClient({
                         <th style={{ padding: "10px 12px", textAlign: "left", fontSize: "0.8rem", color: "var(--text-muted)" }}>Category</th>
                         <th style={{ padding: "10px 12px", textAlign: "left", fontSize: "0.8rem", color: "var(--text-muted)" }}>Notes</th>
                         <th style={{ padding: "10px 12px", textAlign: "right", fontSize: "0.8rem", color: "var(--text-muted)" }}>Amount</th>
+                        {role === "OWNER" && !isReadOnly && <th style={{ padding: "10px 12px", textAlign: "right", fontSize: "0.8rem", color: "var(--text-muted)" }}>Actions</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -588,11 +616,23 @@ export default function FinanceClient({
                           <td style={{ padding: "10px 12px", fontSize: "0.85rem", fontWeight: 600, color: "#10b981", textAlign: "right" }}>
                             + ₹ {inc.amount.toLocaleString("en-IN")}
                           </td>
+                          {role === "OWNER" && !isReadOnly && (
+                            <td style={{ padding: "10px 12px", textAlign: "right" }}>
+                              <button 
+                                onClick={() => handleDeleteIncome(inc.id)}
+                                disabled={isPending}
+                                style={{ background: "transparent", border: "none", color: "#f43f5e", cursor: "pointer", padding: "4px" }}
+                                title="Delete Income Log"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            </td>
+                          )}
                         </tr>
                       ))}
                       {incomeEntries.length === 0 && (
                         <tr>
-                          <td colSpan={4} style={{ padding: "20px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.8rem" }}>
+                          <td colSpan={role === "OWNER" && !isReadOnly ? 5 : 4} style={{ padding: "20px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.8rem" }}>
                             No income entries logged yet.
                           </td>
                         </tr>
@@ -641,6 +681,7 @@ export default function FinanceClient({
                         <th style={{ padding: "10px 12px", textAlign: "left", fontSize: "0.8rem", color: "var(--text-muted)" }}>Category & PaidBy</th>
                         <th style={{ padding: "10px 12px", textAlign: "left", fontSize: "0.8rem", color: "var(--text-muted)" }}>Attachment</th>
                         <th style={{ padding: "10px 12px", textAlign: "right", fontSize: "0.8rem", color: "var(--text-muted)" }}>Amount</th>
+                        {role === "OWNER" && !isReadOnly && <th style={{ padding: "10px 12px", textAlign: "right", fontSize: "0.8rem", color: "var(--text-muted)" }}>Actions</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -686,11 +727,23 @@ export default function FinanceClient({
                             <td style={{ padding: "10px 12px", fontSize: "0.85rem", fontWeight: 600, color: "#f87171", textAlign: "right" }}>
                               - ₹ {exp.amount.toLocaleString("en-IN")}
                             </td>
+                            {role === "OWNER" && !isReadOnly && (
+                              <td style={{ padding: "10px 12px", textAlign: "right" }}>
+                                <button 
+                                  onClick={() => handleDeleteExpense(exp.id)}
+                                  disabled={isPending}
+                                  style={{ background: "transparent", border: "none", color: "#f43f5e", cursor: "pointer", padding: "4px" }}
+                                  title="Delete Expense Log"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         ))}
                       {expenseEntries.filter((exp) => expenseCategoryFilter === "ALL" || exp.category === expenseCategoryFilter).length === 0 && (
                         <tr>
-                          <td colSpan={4} style={{ padding: "20px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.8rem" }}>
+                          <td colSpan={role === "OWNER" && !isReadOnly ? 5 : 4} style={{ padding: "20px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.8rem" }}>
                             No expenses logged matching category.
                           </td>
                         </tr>

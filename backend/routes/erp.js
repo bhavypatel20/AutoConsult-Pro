@@ -637,6 +637,48 @@ router.post('/income', async (req, res) => {
   }
 });
 
+router.delete('/income/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const income = await prisma.incomeEntry.findUnique({ where: { id } });
+    if (!income) return res.status(404).json({ error: "Income entry not found" });
+
+    // Reverse bank account balance if present
+    if (income.accountId) {
+      const account = await prisma.bankAccount.findUnique({ where: { id: income.accountId } });
+      if (account) {
+        await prisma.bankAccount.update({
+          where: { id: income.accountId },
+          data: { balance: Math.max(0, account.balance - income.amount) }
+        });
+      }
+    }
+
+    // Try deleting matching transaction
+    try {
+      const matchingTxn = await prisma.transaction.findFirst({
+        where: {
+          businessId: income.businessId,
+          type: 'INCOME',
+          amount: income.amount,
+          toAccountId: income.accountId
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      if (matchingTxn) {
+        await prisma.transaction.delete({ where: { id: matchingTxn.id } });
+      }
+    } catch (e) {
+      console.error("Failed to delete matching transaction:", e);
+    }
+
+    await prisma.incomeEntry.delete({ where: { id } });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 8. Expense CRUD (Supports bill uploads)
 router.get('/expenses', async (req, res) => {
   try {
@@ -756,6 +798,96 @@ router.post('/expenses', uploadBill.single('bill'), async (req, res) => {
     }
     
     res.status(201).json(expense);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/expenses/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const expense = await prisma.expenseEntry.findUnique({ where: { id } });
+    if (!expense) return res.status(404).json({ error: "Expense entry not found" });
+
+    // 1. Revert bank account balance if paid by Company
+    if (expense.paidBy === 'Company') {
+      // Find matching transaction to identify bank account
+      try {
+        const matchingTxn = await prisma.transaction.findFirst({
+          where: {
+            businessId: expense.businessId,
+            type: 'EXPENSE',
+            amount: expense.amount
+          },
+          orderBy: { createdAt: 'desc' }
+        });
+        if (matchingTxn && matchingTxn.fromAccountId) {
+          const account = await prisma.bankAccount.findUnique({ where: { id: matchingTxn.fromAccountId } });
+          if (account) {
+            await prisma.bankAccount.update({
+              where: { id: matchingTxn.fromAccountId },
+              data: { balance: account.balance + expense.amount }
+            });
+          }
+          await prisma.transaction.delete({ where: { id: matchingTxn.id } });
+        }
+      } catch (e) {
+        console.error("Failed to revert company expense transaction:", e);
+      }
+    } else if (expense.paidBy === 'Partner' && expense.partnerId) {
+      // Revert partner ledger entry and transaction
+      try {
+        const ledger = await prisma.partnerLedger.findFirst({
+          where: {
+            businessId: expense.businessId,
+            partnerId: expense.partnerId,
+            amount: expense.amount,
+            notes: { startsWith: `Expense categorized as: ${expense.category}` }
+          },
+          orderBy: { createdAt: 'desc' }
+        });
+        if (ledger) {
+          await prisma.partnerLedger.delete({ where: { id: ledger.id } });
+        }
+
+        const matchingTxn = await prisma.transaction.findFirst({
+          where: {
+            businessId: expense.businessId,
+            type: 'EXPENSE',
+            amount: expense.amount,
+            notes: `Expense under ${expense.category} paid personally by partner`
+          },
+          orderBy: { createdAt: 'desc' }
+        });
+        if (matchingTxn) {
+          await prisma.transaction.delete({ where: { id: matchingTxn.id } });
+        }
+      } catch (e) {
+        console.error("Failed to revert partner ledger transaction:", e);
+      }
+    }
+
+    // 2. Revert car expense record if attached
+    if (expense.carId) {
+      try {
+        const carExpense = await prisma.expense.findFirst({
+          where: {
+            carId: expense.carId,
+            amount: expense.amount,
+            description: `ERP Expense: ${expense.category} - ${expense.notes || ''}`
+          },
+          orderBy: { id: 'desc' }
+        });
+        if (carExpense) {
+          await prisma.expense.delete({ where: { id: carExpense.id } });
+        }
+      } catch (e) {
+        console.error("Failed to revert car expense:", e);
+      }
+    }
+
+    await prisma.expenseEntry.delete({ where: { id } });
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
