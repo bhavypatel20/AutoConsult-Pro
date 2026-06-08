@@ -210,6 +210,19 @@ const modalContentStyle: React.CSSProperties = {
   maxWidth: "520px",
   boxShadow: "0 20px 50px rgba(0, 0, 0, 0.5)",
   overflow: "hidden",
+  maxHeight: "min(720px, calc(100vh - 40px))",
+  display: "flex",
+  flexDirection: "column",
+};
+
+const modalFormStyle: React.CSSProperties = {
+  padding: "24px",
+  display: "flex",
+  flexDirection: "column",
+  gap: "16px",
+  overflowY: "auto",
+  flexGrow: 1,
+  minHeight: 0,
 };
 
 export default function FinanceClient({
@@ -1139,7 +1152,7 @@ export default function FinanceClient({
               <h3 style={{ margin: 0 }}>Register Dealership Account</h3>
               <button onClick={() => setActiveModal(null)} style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><X size={18} /></button>
             </div>
-            <form onSubmit={runAction(createBankAccount, "Bank Account added successfully")} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+            <form onSubmit={runAction(createBankAccount, "Bank Account added successfully")} style={modalFormStyle}>
               <label style={labelStyle}>
                 Account Display Name
                 <input type="text" name="name" required placeholder="HDFC Current, Office Cash Drawer, etc." style={inputStyle} />
@@ -1169,7 +1182,7 @@ export default function FinanceClient({
               <h3 style={{ margin: 0 }}>Internal Account Transfer</h3>
               <button onClick={() => setActiveModal(null)} style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><X size={18} /></button>
             </div>
-            <form onSubmit={runAction(transferBankAccountFunds, "Funds transferred successfully")} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+            <form onSubmit={runAction(transferBankAccountFunds, "Funds transferred successfully")} style={modalFormStyle}>
               <div className="responsive-grid-2">
                 <label style={labelStyle}>
                   From Account
@@ -1213,7 +1226,7 @@ export default function FinanceClient({
               <h3 style={{ margin: 0 }}>Register New Dealership Partner</h3>
               <button onClick={() => setActiveModal(null)} style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><X size={18} /></button>
             </div>
-            <form onSubmit={runAction(createPartner, "Partner registered successfully")} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+            <form onSubmit={runAction(createPartner, "Partner registered successfully")} style={modalFormStyle}>
               <label style={labelStyle}>
                 Partner Full Name
                 <input type="text" name="name" required placeholder="Partner Name" style={inputStyle} />
@@ -1253,7 +1266,7 @@ export default function FinanceClient({
               <h3 style={{ margin: 0 }}>Modify Partner Specs</h3>
               <button onClick={() => setActiveModal(null)} style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><X size={18} /></button>
             </div>
-            <form onSubmit={runAction(updatePartner, "Partner details updated successfully")} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+            <form onSubmit={runAction(updatePartner, "Partner details updated successfully")} style={modalFormStyle}>
               <input type="hidden" name="id" value={selectedPartner.id} />
               <label style={labelStyle}>
                 Partner Full Name
@@ -1301,7 +1314,7 @@ export default function FinanceClient({
               <h3 style={{ margin: 0 }}>Log Partner Ledger Entry</h3>
               <button onClick={() => setActiveModal(null)} style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><X size={18} /></button>
             </div>
-            <form onSubmit={runAction(addPartnerLedgerEntry, "Partner ledger entry saved")} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+            <form onSubmit={runAction(addPartnerLedgerEntry, "Partner ledger entry saved")} style={modalFormStyle}>
               <label style={labelStyle}>
                 Select Partner
                 <select name="partnerId" required style={inputStyle}>
@@ -1360,7 +1373,7 @@ export default function FinanceClient({
               <h3 style={{ margin: 0 }}>Log Dealership Income</h3>
               <button onClick={() => setActiveModal(null)} style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><X size={18} /></button>
             </div>
-            <form onSubmit={runAction(createIncomeEntry, "Income entry logged successfully")} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+            <form onSubmit={runAction(createIncomeEntry, "Income entry logged successfully")} style={modalFormStyle}>
               <div className="responsive-grid-2">
                 <label style={labelStyle}>
                   Income Category
@@ -1420,7 +1433,7 @@ export default function FinanceClient({
               <h3 style={{ margin: 0 }}>Log Business Expense</h3>
               <button onClick={() => setActiveModal(null)} style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><X size={18} /></button>
             </div>
-            <form onSubmit={runAction(createExpenseEntry, "Expense logged successfully")} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+            <form onSubmit={runAction(createExpenseEntry, "Expense logged successfully")} style={modalFormStyle}>
               <div className="responsive-grid-2">
                 <label style={labelStyle}>
                   Expense Category
@@ -1570,7 +1583,7 @@ export default function FinanceClient({
               <h3 style={{ margin: 0 }}>Log Customer Payment</h3>
               <button onClick={() => { setActiveModal(null); setSelectedCustomerLedger(null); }} style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><X size={18} /></button>
             </div>
-            <form onSubmit={runAction(addCustomerPayment, "Payment logged successfully")} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+            <form onSubmit={runAction(addCustomerPayment, "Payment logged successfully")} style={modalFormStyle}>
               <input type="hidden" name="ledgerId" value={selectedCustomerLedger.id} />
               <div style={{ fontSize: "0.9rem", color: "var(--text-muted)", background: "rgba(255,255,255,0.02)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
                 <div>Customer: <strong>{selectedCustomerLedger.customer.name}</strong></div>
@@ -1628,7 +1641,7 @@ export default function FinanceClient({
               <h3 style={{ margin: 0 }}>Log Supplier Payout</h3>
               <button onClick={() => { setActiveModal(null); setSelectedSellerLedger(null); }} style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><X size={18} /></button>
             </div>
-            <form onSubmit={runAction(addSellerPayment, "Payout logged successfully")} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+            <form onSubmit={runAction(addSellerPayment, "Payout logged successfully")} style={modalFormStyle}>
               <input type="hidden" name="ledgerId" value={selectedSellerLedger.id} />
               <div style={{ fontSize: "0.9rem", color: "var(--text-muted)", background: "rgba(255,255,255,0.02)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
                 <div>Seller / Supplier: <strong>{selectedSellerLedger.sellerName}</strong></div>
