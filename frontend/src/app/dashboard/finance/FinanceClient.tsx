@@ -507,15 +507,15 @@ export default function FinanceClient({
 
             <h4 style={{ marginBottom: "16px", fontSize: "1.1rem" }}>Cash/Bank Account Movements</h4>
             <div className="table-responsive-wrapper">
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+              <table className="dashboard-table" style={{ minWidth: "750px" }}>
                 <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border-light)", background: "rgba(255,255,255,0.01)" }}>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Date</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Txn ID</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Type</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Account Swap</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Mode</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)", textAlign: "right" }}>Amount</th>
+                  <tr>
+                    <th style={{ width: "100px" }}>Date</th>
+                    <th style={{ width: "130px" }}>Txn ID</th>
+                    <th style={{ width: "120px" }}>Type</th>
+                    <th>Account Swap</th>
+                    <th style={{ width: "110px" }}>Mode</th>
+                    <th style={{ textAlign: "right", width: "140px" }}>Amount</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -526,15 +526,15 @@ export default function FinanceClient({
                       const fromAcc = bankAccounts.find((a) => a.id === t.fromAccountId);
                       const toAcc = bankAccounts.find((a) => a.id === t.toAccountId);
                       return (
-                        <tr key={t.id} style={{ borderBottom: "1px solid var(--border-light)" }}>
-                          <td style={{ padding: "12px 16px", fontSize: "0.9rem" }}>{new Date(t.date).toLocaleDateString()}</td>
-                          <td style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>{t.transactionNum}</td>
-                          <td style={{ padding: "12px 16px", fontSize: "0.9rem" }}>
+                        <tr key={t.id}>
+                          <td>{new Date(t.date).toLocaleDateString()}</td>
+                          <td style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>{t.transactionNum}</td>
+                          <td>
                             <span style={{ fontSize: "0.8rem", textTransform: "capitalize" }}>
                               {t.type.replace("_", " ")}
                             </span>
                           </td>
-                          <td style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                          <td style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
                             {t.type === "TRANSFER" ? (
                               <span>{fromAcc?.name} &rarr; {toAcc?.name}</span>
                             ) : t.toAccountId ? (
@@ -543,12 +543,12 @@ export default function FinanceClient({
                               <span>Deduction: {fromAcc?.name}</span>
                             )}
                           </td>
-                          <td style={{ padding: "12px 16px", fontSize: "0.85rem" }}>
+                          <td>
                             <span style={{ padding: "2px 6px", borderRadius: 4, background: "rgba(255,255,255,0.05)" }}>
                               {t.paymentMode}
                             </span>
                           </td>
-                          <td style={{ padding: "12px 16px", fontSize: "0.9rem", fontWeight: 600, textAlign: "right", color: t.toAccountId && t.type !== "TRANSFER" ? "#10b981" : t.fromAccountId && t.type !== "TRANSFER" ? "#ef4444" : "var(--text-main)" }}>
+                          <td style={{ fontWeight: 600, textAlign: "right", color: t.toAccountId && t.type !== "TRANSFER" ? "#10b981" : t.fromAccountId && t.type !== "TRANSFER" ? "#ef4444" : "var(--text-main)" }}>
                             {t.toAccountId && t.type !== "TRANSFER" ? "+" : t.fromAccountId && t.type !== "TRANSFER" ? "-" : ""} ₹ {t.amount.toLocaleString("en-IN")}
                           </td>
                         </tr>
@@ -556,7 +556,7 @@ export default function FinanceClient({
                     })}
                   {transactions.filter((t) => t.fromAccountId || t.toAccountId).length === 0 && (
                     <tr>
-                      <td colSpan={6} style={{ padding: "24px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.9rem" }}>
+                      <td colSpan={6} style={{ textAlign: "center", color: "var(--text-muted)", padding: "24px 16px" }}>
                         No account entries registered.
                       </td>
                     </tr>
@@ -593,35 +593,35 @@ export default function FinanceClient({
                   <TrendingUp size={18} /> Dealership Income Log
                 </h4>
                 <div className="table-responsive-wrapper">
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <table className="dashboard-table" style={{ minWidth: "620px" }}>
                     <thead>
-                      <tr style={{ borderBottom: "1px solid var(--border-light)", background: "rgba(255,255,255,0.01)" }}>
-                        <th style={{ padding: "10px 12px", textAlign: "left", fontSize: "0.8rem", color: "var(--text-muted)" }}>Date</th>
-                        <th style={{ padding: "10px 12px", textAlign: "left", fontSize: "0.8rem", color: "var(--text-muted)" }}>Category</th>
-                        <th style={{ padding: "10px 12px", textAlign: "left", fontSize: "0.8rem", color: "var(--text-muted)" }}>Notes</th>
-                        <th style={{ padding: "10px 12px", textAlign: "right", fontSize: "0.8rem", color: "var(--text-muted)" }}>Amount</th>
-                        {role === "OWNER" && !isReadOnly && <th style={{ padding: "10px 12px", textAlign: "right", fontSize: "0.8rem", color: "var(--text-muted)" }}>Actions</th>}
+                      <tr>
+                        <th style={{ width: "95px" }}>Date</th>
+                        <th style={{ width: "120px" }}>Category</th>
+                        <th>Notes</th>
+                        <th style={{ textAlign: "right", width: "120px" }}>Amount</th>
+                        {role === "OWNER" && !isReadOnly && <th style={{ textAlign: "center", width: "70px" }}>Actions</th>}
                       </tr>
                     </thead>
                     <tbody>
                       {incomeEntries.map((inc) => (
-                        <tr key={inc.id} style={{ borderBottom: "1px solid var(--border-light)" }}>
-                          <td style={{ padding: "10px 12px", fontSize: "0.85rem" }}>{new Date(inc.date).toLocaleDateString()}</td>
-                          <td style={{ padding: "10px 12px", fontSize: "0.85rem" }}>
-                            <span style={{ padding: "2px 6px", borderRadius: 4, background: "rgba(16, 185, 129, 0.1)", color: "#10b981", fontSize: "0.75rem", fontWeight: 600 }}>
+                        <tr key={inc.id}>
+                          <td style={{ whiteSpace: "nowrap" }}>{new Date(inc.date).toLocaleDateString()}</td>
+                          <td>
+                            <span style={{ padding: "4px 8px", borderRadius: 6, background: "rgba(16, 185, 129, 0.1)", color: "#10b981", fontSize: "0.75rem", fontWeight: 600 }}>
                               {inc.category}
                             </span>
                           </td>
-                          <td style={{ padding: "10px 12px", fontSize: "0.85rem", color: "var(--text-muted)" }}>{inc.notes || "-"}</td>
-                          <td style={{ padding: "10px 12px", fontSize: "0.85rem", fontWeight: 600, color: "#10b981", textAlign: "right" }}>
+                          <td style={{ color: "var(--text-muted)", wordBreak: "break-word" }}>{inc.notes || "-"}</td>
+                          <td style={{ fontWeight: 600, color: "#10b981", textAlign: "right" }}>
                             + ₹ {inc.amount.toLocaleString("en-IN")}
                           </td>
                           {role === "OWNER" && !isReadOnly && (
-                            <td style={{ padding: "10px 12px", textAlign: "right" }}>
+                            <td style={{ textAlign: "center" }}>
                               <button 
                                 onClick={() => handleDeleteIncome(inc.id)}
                                 disabled={isPending}
-                                style={{ background: "transparent", border: "none", color: "#f43f5e", cursor: "pointer", padding: "4px" }}
+                                className="action-btn-delete"
                                 title="Delete Income Log"
                               >
                                 <Trash2 size={15} />
@@ -632,7 +632,7 @@ export default function FinanceClient({
                       ))}
                       {incomeEntries.length === 0 && (
                         <tr>
-                          <td colSpan={role === "OWNER" && !isReadOnly ? 5 : 4} style={{ padding: "20px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.8rem" }}>
+                          <td colSpan={role === "OWNER" && !isReadOnly ? 5 : 4} style={{ textAlign: "center", color: "var(--text-muted)", padding: "24px 16px" }}>
                             No income entries logged yet.
                           </td>
                         </tr>
@@ -674,36 +674,36 @@ export default function FinanceClient({
                   </select>
                 </div>
                 <div className="table-responsive-wrapper">
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <table className="dashboard-table" style={{ minWidth: "680px" }}>
                     <thead>
-                      <tr style={{ borderBottom: "1px solid var(--border-light)", background: "rgba(255,255,255,0.01)" }}>
-                        <th style={{ padding: "10px 12px", textAlign: "left", fontSize: "0.8rem", color: "var(--text-muted)" }}>Date</th>
-                        <th style={{ padding: "10px 12px", textAlign: "left", fontSize: "0.8rem", color: "var(--text-muted)" }}>Category & PaidBy</th>
-                        <th style={{ padding: "10px 12px", textAlign: "left", fontSize: "0.8rem", color: "var(--text-muted)" }}>Attachment</th>
-                        <th style={{ padding: "10px 12px", textAlign: "right", fontSize: "0.8rem", color: "var(--text-muted)" }}>Amount</th>
-                        {role === "OWNER" && !isReadOnly && <th style={{ padding: "10px 12px", textAlign: "right", fontSize: "0.8rem", color: "var(--text-muted)" }}>Actions</th>}
+                      <tr>
+                        <th style={{ width: "95px" }}>Date</th>
+                        <th>Category & PaidBy</th>
+                        <th style={{ width: "120px" }}>Attachment</th>
+                        <th style={{ textAlign: "right", width: "120px" }}>Amount</th>
+                        {role === "OWNER" && !isReadOnly && <th style={{ textAlign: "center", width: "70px" }}>Actions</th>}
                       </tr>
                     </thead>
                     <tbody>
                       {expenseEntries
                         .filter((exp) => expenseCategoryFilter === "ALL" || exp.category === expenseCategoryFilter)
                         .map((exp) => (
-                          <tr key={exp.id} style={{ borderBottom: "1px solid var(--border-light)" }}>
-                            <td style={{ padding: "10px 12px", fontSize: "0.85rem" }}>{new Date(exp.date).toLocaleDateString()}</td>
-                            <td style={{ padding: "10px 12px", fontSize: "0.85rem" }}>
+                          <tr key={exp.id}>
+                            <td style={{ whiteSpace: "nowrap" }}>{new Date(exp.date).toLocaleDateString()}</td>
+                            <td>
                               <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                                <span style={{ padding: "2px 6px", borderRadius: 4, background: "rgba(239, 68, 68, 0.1)", color: "#f87171", fontSize: "0.75rem", fontWeight: 600 }}>
+                                <span style={{ padding: "4px 8px", borderRadius: 6, background: "rgba(239, 68, 68, 0.1)", color: "#f87171", fontSize: "0.75rem", fontWeight: 600 }}>
                                   {exp.category}
                                 </span>
                                 <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
                                   via {exp.paidBy}
                                 </span>
                               </div>
-                              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px" }}>
+                              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px", wordBreak: "break-word" }}>
                                 {exp.notes}
                               </div>
                             </td>
-                            <td style={{ padding: "10px 12px", fontSize: "0.85rem" }}>
+                            <td>
                               {exp.billUrl ? (
                                 <a
                                   href={exp.billUrl}
@@ -721,18 +721,18 @@ export default function FinanceClient({
                                   <Eye size={12} /> View Bill
                                 </a>
                               ) : (
-                                <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>None</span>
+                                <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>None</span>
                               )}
                             </td>
-                            <td style={{ padding: "10px 12px", fontSize: "0.85rem", fontWeight: 600, color: "#f87171", textAlign: "right" }}>
+                            <td style={{ fontWeight: 600, color: "#f87171", textAlign: "right" }}>
                               - ₹ {exp.amount.toLocaleString("en-IN")}
                             </td>
                             {role === "OWNER" && !isReadOnly && (
-                              <td style={{ padding: "10px 12px", textAlign: "right" }}>
+                              <td style={{ textAlign: "center" }}>
                                 <button 
                                   onClick={() => handleDeleteExpense(exp.id)}
                                   disabled={isPending}
-                                  style={{ background: "transparent", border: "none", color: "#f43f5e", cursor: "pointer", padding: "4px" }}
+                                  className="action-btn-delete"
                                   title="Delete Expense Log"
                                 >
                                   <Trash2 size={15} />
@@ -743,7 +743,7 @@ export default function FinanceClient({
                         ))}
                       {expenseEntries.filter((exp) => expenseCategoryFilter === "ALL" || exp.category === expenseCategoryFilter).length === 0 && (
                         <tr>
-                          <td colSpan={role === "OWNER" && !isReadOnly ? 5 : 4} style={{ padding: "20px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.8rem" }}>
+                          <td colSpan={role === "OWNER" && !isReadOnly ? 5 : 4} style={{ textAlign: "center", color: "var(--text-muted)", padding: "24px 16px" }}>
                             No expenses logged matching category.
                           </td>
                         </tr>
@@ -856,14 +856,14 @@ export default function FinanceClient({
             {/* Sub-ledger History */}
             <h4 style={{ marginBottom: "16px", fontSize: "1.1rem" }}>Capital Ledgers Audit Trail</h4>
             <div className="table-responsive-wrapper">
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+              <table className="dashboard-table" style={{ minWidth: "750px" }}>
                 <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border-light)", background: "rgba(255,255,255,0.01)" }}>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Date</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Partner Name</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Entry Type</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Description</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)", textAlign: "right" }}>Ledger Flow</th>
+                  <tr>
+                    <th style={{ width: "100px" }}>Date</th>
+                    <th style={{ width: "160px" }}>Partner Name</th>
+                    <th style={{ width: "150px" }}>Entry Type</th>
+                    <th>Description</th>
+                    <th style={{ textAlign: "right", width: "150px" }}>Ledger Flow</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -872,10 +872,10 @@ export default function FinanceClient({
                     .map((t) => {
                       const matchedPartner = partners.find((p) => p.id === t.relatedEntityId);
                       return (
-                        <tr key={t.id} style={{ borderBottom: "1px solid var(--border-light)" }}>
-                          <td style={{ padding: "12px 16px", fontSize: "0.9rem" }}>{new Date(t.date).toLocaleDateString()}</td>
-                          <td style={{ padding: "12px 16px", fontSize: "0.9rem", fontWeight: 600 }}>{matchedPartner?.name || "Dealership"}</td>
-                          <td style={{ padding: "12px 16px", fontSize: "0.85rem" }}>
+                        <tr key={t.id}>
+                          <td>{new Date(t.date).toLocaleDateString()}</td>
+                          <td style={{ fontWeight: 600 }}>{matchedPartner?.name || "Dealership"}</td>
+                          <td>
                             <span style={{
                               padding: "2px 6px",
                               borderRadius: 4,
@@ -887,8 +887,8 @@ export default function FinanceClient({
                               {t.type.replace("_", " ")}
                             </span>
                           </td>
-                          <td style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>{t.notes}</td>
-                          <td style={{ padding: "12px 16px", fontSize: "0.9rem", fontWeight: 600, textAlign: "right", color: t.type.includes("INVEST") ? "#10b981" : "#ef4444" }}>
+                          <td style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>{t.notes}</td>
+                          <td style={{ fontWeight: 600, textAlign: "right", color: t.type.includes("INVEST") ? "#10b981" : "#ef4444" }}>
                             {t.type.includes("INVEST") ? "+" : "-"} ₹ {t.amount.toLocaleString("en-IN")}
                           </td>
                         </tr>
@@ -896,7 +896,7 @@ export default function FinanceClient({
                     })}
                   {transactions.filter((t) => t.type.includes("PARTNER") || t.type.includes("CAPITAL") || t.type.includes("WITHDRAWAL")).length === 0 && (
                     <tr>
-                      <td colSpan={5} style={{ padding: "24px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.9rem" }}>
+                      <td colSpan={5} style={{ textAlign: "center", color: "var(--text-muted)", padding: "24px 16px" }}>
                         No partner ledger transactions recorded yet.
                       </td>
                     </tr>
@@ -907,36 +907,33 @@ export default function FinanceClient({
           </div>
         )}
 
-        {/* ==================================================== */}
-        {/* 4. CUSTOMER LEDGER TAB */}
-        {/* ==================================================== */}
         {activeTab === "customers" && (
           <div>
             <h3 style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: "16px" }}>Outstanding Receivables Ledger</h3>
             <div className="table-responsive-wrapper">
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+              <table className="dashboard-table" style={{ minWidth: "850px" }}>
                 <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border-light)", background: "rgba(255,255,255,0.01)" }}>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Customer</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Due Date</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Status</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Total Deal Amt</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Advance Paid</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Outstanding Balance</th>
-                    {!isReadOnly && <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)", textAlign: "right" }}>Actions</th>}
+                  <tr>
+                    <th>Customer</th>
+                    <th style={{ width: "130px" }}>Due Date</th>
+                    <th style={{ width: "110px" }}>Status</th>
+                    <th style={{ width: "140px" }}>Total Deal Amt</th>
+                    <th style={{ width: "140px" }}>Advance Paid</th>
+                    <th style={{ width: "160px" }}>Outstanding Balance</th>
+                    {!isReadOnly && <th style={{ textAlign: "right", width: "140px" }}>Actions</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {customerLedgers.map((l) => (
-                    <tr key={l.id} style={{ borderBottom: "1px solid var(--border-light)" }}>
-                      <td style={{ padding: "12px 16px", fontSize: "0.9rem" }}>
+                    <tr key={l.id}>
+                      <td>
                         <strong>{l.customer.name}</strong>
                         <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "2px" }}>{l.customer.phone}</div>
                       </td>
-                      <td style={{ padding: "12px 16px", fontSize: "0.85rem" }}>
+                      <td>
                         {l.dueDate ? new Date(l.dueDate).toLocaleDateString() : "No Schedule Set"}
                       </td>
-                      <td style={{ padding: "12px 16px" }}>
+                      <td>
                         <span
                           style={{
                             padding: "2px 8px",
@@ -950,13 +947,13 @@ export default function FinanceClient({
                           {l.status}
                         </span>
                       </td>
-                      <td style={{ padding: "12px 16px", fontSize: "0.9rem" }}>₹ {l.totalAmount.toLocaleString("en-IN")}</td>
-                      <td style={{ padding: "12px 16px", fontSize: "0.9rem", color: "#10b981" }}>₹ {l.advanceReceived.toLocaleString("en-IN")}</td>
-                      <td style={{ padding: "12px 16px", fontSize: "0.9rem", fontWeight: 700, color: l.remainingAmount > 0 ? "#f59e0b" : "var(--text-muted)" }}>
+                      <td>₹ {l.totalAmount.toLocaleString("en-IN")}</td>
+                      <td style={{ color: "#10b981" }}>₹ {l.advanceReceived.toLocaleString("en-IN")}</td>
+                      <td style={{ fontWeight: 700, color: l.remainingAmount > 0 ? "#f59e0b" : "var(--text-muted)" }}>
                         ₹ {l.remainingAmount.toLocaleString("en-IN")}
                       </td>
                       {!isReadOnly && (
-                        <td style={{ padding: "12px 16px", textAlign: "right" }}>
+                        <td style={{ textAlign: "right" }}>
                           {l.remainingAmount > 0 ? (
                             <button
                               onClick={() => {
@@ -979,7 +976,7 @@ export default function FinanceClient({
                   ))}
                   {customerLedgers.length === 0 && (
                     <tr>
-                      <td colSpan={7} style={{ padding: "24px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.9rem" }}>
+                      <td colSpan={7} style={{ textAlign: "center", color: "var(--text-muted)", padding: "24px 16px" }}>
                         No customer ledgers created yet. Leads automatically create ledgers when deals close.
                       </td>
                     </tr>
@@ -990,36 +987,33 @@ export default function FinanceClient({
           </div>
         )}
 
-        {/* ==================================================== */}
-        {/* 5. SELLER LEDGER TAB */}
-        {/* ==================================================== */}
         {activeTab === "sellers" && (
           <div>
             <h3 style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: "16px" }}>Outstanding Supplier Payables Ledger</h3>
             <div className="table-responsive-wrapper">
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+              <table className="dashboard-table" style={{ minWidth: "900px" }}>
                 <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border-light)", background: "rgba(255,255,255,0.01)" }}>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Seller Detail</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Vehicle Context</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Status</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Purchase Agreement Cost</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Dealership Paid</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Pending Liabilities</th>
-                    {!isReadOnly && <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)", textAlign: "right" }}>Actions</th>}
+                  <tr>
+                    <th>Seller Detail</th>
+                    <th>Vehicle Context</th>
+                    <th style={{ width: "110px" }}>Status</th>
+                    <th style={{ width: "160px" }}>Purchase Agreement Cost</th>
+                    <th style={{ width: "140px" }}>Dealership Paid</th>
+                    <th style={{ width: "160px" }}>Pending Liabilities</th>
+                    {!isReadOnly && <th style={{ textAlign: "right", width: "140px" }}>Actions</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {sellerLedgers.map((l) => (
-                    <tr key={l.id} style={{ borderBottom: "1px solid var(--border-light)" }}>
-                      <td style={{ padding: "12px 16px", fontSize: "0.9rem" }}>
+                    <tr key={l.id}>
+                      <td>
                         <strong>{l.sellerName}</strong>
                       </td>
-                      <td style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                      <td style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
                         {l.car.year} {l.car.brand} {l.car.model}
                         <div style={{ fontSize: "0.75rem", fontStyle: "italic", marginTop: "2px" }}>{l.car.registrationNum}</div>
                       </td>
-                      <td style={{ padding: "12px 16px" }}>
+                      <td>
                         <span
                           style={{
                             padding: "2px 8px",
@@ -1033,13 +1027,13 @@ export default function FinanceClient({
                           {l.status}
                         </span>
                       </td>
-                      <td style={{ padding: "12px 16px", fontSize: "0.9rem" }}>₹ {l.totalPurchaseAmount.toLocaleString("en-IN")}</td>
-                      <td style={{ padding: "12px 16px", fontSize: "0.9rem", color: "#10b981" }}>₹ {l.paidAmount.toLocaleString("en-IN")}</td>
-                      <td style={{ padding: "12px 16px", fontSize: "0.9rem", fontWeight: 700, color: l.pendingAmount > 0 ? "#ef4444" : "var(--text-muted)" }}>
+                      <td>₹ {l.totalPurchaseAmount.toLocaleString("en-IN")}</td>
+                      <td style={{ color: "#10b981" }}>₹ {l.paidAmount.toLocaleString("en-IN")}</td>
+                      <td style={{ fontWeight: 700, color: l.pendingAmount > 0 ? "#ef4444" : "var(--text-muted)" }}>
                         ₹ {l.pendingAmount.toLocaleString("en-IN")}
                       </td>
                       {!isReadOnly && (
-                        <td style={{ padding: "12px 16px", textAlign: "right" }}>
+                        <td style={{ textAlign: "right" }}>
                           {l.pendingAmount > 0 ? (
                             <button
                               onClick={() => {
@@ -1062,7 +1056,7 @@ export default function FinanceClient({
                   ))}
                   {sellerLedgers.length === 0 && (
                     <tr>
-                      <td colSpan={7} style={{ padding: "24px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.9rem" }}>
+                      <td colSpan={7} style={{ textAlign: "center", color: "var(--text-muted)", padding: "24px 16px" }}>
                         No supplier records logged.
                       </td>
                     </tr>
@@ -1127,15 +1121,15 @@ export default function FinanceClient({
             </div>
 
             <div className="table-responsive-wrapper">
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+              <table className="dashboard-table" style={{ minWidth: "900px" }}>
                 <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border-light)", background: "rgba(255,255,255,0.01)" }}>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Date</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Txn Number</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Type</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Payment Method</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>Notes / Details</th>
-                    <th style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)", textAlign: "right" }}>Amount</th>
+                  <tr>
+                    <th style={{ width: "100px" }}>Date</th>
+                    <th style={{ width: "130px" }}>Txn Number</th>
+                    <th style={{ width: "155px" }}>Type</th>
+                    <th style={{ width: "140px" }}>Payment Method</th>
+                    <th>Notes / Details</th>
+                    <th style={{ textAlign: "right", width: "140px" }}>Amount</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1152,10 +1146,10 @@ export default function FinanceClient({
                       "WITHDRAWAL",
                     ].includes(t.type);
                     return (
-                      <tr key={t.id} style={{ borderBottom: "1px solid var(--border-light)" }}>
-                        <td style={{ padding: "12px 16px", fontSize: "0.9rem" }}>{new Date(t.date).toLocaleDateString()}</td>
-                        <td style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>{t.transactionNum}</td>
-                        <td style={{ padding: "12px 16px", fontSize: "0.85rem" }}>
+                      <tr key={t.id}>
+                        <td>{new Date(t.date).toLocaleDateString()}</td>
+                        <td style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>{t.transactionNum}</td>
+                        <td>
                           <span style={{
                             padding: "2px 6px",
                             borderRadius: 4,
@@ -1168,13 +1162,13 @@ export default function FinanceClient({
                             {t.type.replace("_", " ")}
                           </span>
                         </td>
-                        <td style={{ padding: "12px 16px", fontSize: "0.85rem" }}>
+                        <td>
                           <span style={{ padding: "2px 6px", borderRadius: 4, background: "rgba(255,255,255,0.05)" }}>
                             {t.paymentMode}
                           </span>
                         </td>
-                        <td style={{ padding: "12px 16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>{t.notes}</td>
-                        <td style={{ padding: "12px 16px", fontSize: "0.9rem", fontWeight: 700, textAlign: "right", color: isIncome ? "#10b981" : isExpense ? "#ef4444" : "var(--text-main)" }}>
+                        <td style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>{t.notes}</td>
+                        <td style={{ fontWeight: 700, textAlign: "right", color: isIncome ? "#10b981" : isExpense ? "#ef4444" : "var(--text-main)" }}>
                           {isIncome ? "+" : isExpense ? "-" : ""} ₹ {t.amount.toLocaleString("en-IN")}
                         </td>
                       </tr>
@@ -1182,7 +1176,7 @@ export default function FinanceClient({
                   })}
                   {filteredTransactions.length === 0 && (
                     <tr>
-                      <td colSpan={6} style={{ padding: "24px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.9rem" }}>
+                      <td colSpan={6} style={{ textAlign: "center", color: "var(--text-muted)", padding: "24px 16px" }}>
                         No matching transactions found.
                       </td>
                     </tr>
