@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect } from "react";
 import { editExpense, deleteExpense, editDeal, deleteDeal } from "@/actions/finance";
-import { Edit2, Trash2, X, AlertTriangle, Printer } from "lucide-react";
+import { Edit2, Trash2, X, AlertTriangle, Printer, Search } from "lucide-react";
 
 interface Car {
   id: string;
@@ -98,6 +98,21 @@ const cancelBtnStyle = {
 export default function DealsClient({ deals, expenses, members, isReadOnly, businessName, businessLogo, bankAccounts }: DealsClientProps) {
   const [isPending, startTransition] = useTransition();
   const unpaidDeals = deals.filter(deal => deal.paymentStatus !== 'Paid');
+  const [dealSearch, setDealSearch] = useState("");
+  const [dealPaymentFilter, setDealPaymentFilter] = useState("All");
+
+  const filteredDeals = deals.filter(deal => {
+    const matchesSearch =
+      deal.car.brand.toLowerCase().includes(dealSearch.toLowerCase()) ||
+      deal.car.model.toLowerCase().includes(dealSearch.toLowerCase()) ||
+      deal.car.registrationNum.toLowerCase().includes(dealSearch.toLowerCase()) ||
+      deal.customer.name.toLowerCase().includes(dealSearch.toLowerCase());
+
+    const matchesStatus =
+      dealPaymentFilter === "All" || deal.paymentStatus === dealPaymentFilter;
+
+    return matchesSearch && matchesStatus;
+  });
   
   // Modals / Editing States
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -219,65 +234,99 @@ export default function DealsClient({ deals, expenses, members, isReadOnly, busi
           No deals closed yet.
         </div>
       ) : (
-        <div className="glass-card table-responsive-wrapper" style={{ padding: 0, marginBottom: '32px' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-light)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
-                <th style={{ padding: '16px 24px', fontWeight: 600 }}>Closed Date</th>
-                <th style={{ padding: '16px 24px', fontWeight: 600 }}>Car & Customer</th>
-                <th style={{ padding: '16px 24px', fontWeight: 600 }}>Status</th>
-                <th style={{ padding: '16px 24px', fontWeight: 600 }}>Revenue</th>
-                <th style={{ padding: '16px 24px', fontWeight: 600, textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {deals.map(deal => (
-                <tr key={deal.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                  <td style={{ padding: '16px 24px' }}>{new Date(deal.dealDate).toLocaleDateString()}</td>
-                  <td style={{ padding: '16px 24px' }}>
-                    <strong>{deal.car.brand} {deal.car.model}</strong>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Sold to: {deal.customer.name}</div>
-                  </td>
-                  <td style={{ padding: '16px 24px' }}>
-                     <span style={{ padding: '4px 10px', borderRadius: 99, fontSize: '0.8rem', background: deal.paymentStatus === 'Paid' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)', color: deal.paymentStatus === 'Paid' ? '#10b981' : '#f59e0b' }}>
-                      {deal.paymentStatus}
-                    </span>
-                  </td>
-                  <td style={{ padding: '16px 24px', fontWeight: 'bold' }}>₹ {deal.finalPrice.toLocaleString()}</td>
-                  <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                      <button 
-                        onClick={() => setPrintingInvoice(deal)}
-                        style={{ background: 'transparent', border: 'none', color: '#c084fc', cursor: 'pointer', padding: '4px', display: 'inline-flex', alignItems: 'center' }}
-                        title="Print Invoice"
-                      >
-                        <Printer size={16} />
-                      </button>
-                      {!isReadOnly && (
-                        <>
+        <>
+          {/* Search & Filter Bar */}
+          <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ position: 'relative', flex: 1, minWidth: '260px' }}>
+              <input 
+                type="text" 
+                placeholder="Search by brand, model, registration or customer..." 
+                value={dealSearch}
+                onChange={(e) => setDealSearch(e.target.value)}
+                style={{ ...inputStyle, width: '100%', marginTop: 0, paddingLeft: '44px' }}
+              />
+              <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            </div>
+            <div style={{ width: '180px', position: 'relative' }}>
+              <select 
+                value={dealPaymentFilter}
+                onChange={(e) => setDealPaymentFilter(e.target.value)}
+                style={{ ...selectStyle, width: '100%', marginTop: 0, cursor: 'pointer' }}
+              >
+                <option value="All">All Payments</option>
+                <option value="Paid">Paid</option>
+                <option value="Partial">Partial</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </div>
+          </div>
+
+          {filteredDeals.length === 0 ? (
+            <div className="glass-card" style={{ textAlign: 'center', padding: '42px', color: 'var(--text-muted)', marginBottom: '32px' }}>
+              No deals match your search or filter criteria.
+            </div>
+          ) : (
+            <div className="glass-card table-responsive-wrapper" style={{ padding: 0, marginBottom: '32px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border-light)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                    <th style={{ padding: '16px 24px', fontWeight: 600 }}>Closed Date</th>
+                    <th style={{ padding: '16px 24px', fontWeight: 600 }}>Car & Customer</th>
+                    <th style={{ padding: '16px 24px', fontWeight: 600 }}>Status</th>
+                    <th style={{ padding: '16px 24px', fontWeight: 600 }}>Revenue</th>
+                    <th style={{ padding: '16px 24px', fontWeight: 600, textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredDeals.map(deal => (
+                    <tr key={deal.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                      <td style={{ padding: '16px 24px' }}>{new Date(deal.dealDate).toLocaleDateString()}</td>
+                      <td style={{ padding: '16px 24px' }}>
+                        <strong>{deal.car.brand} {deal.car.model}</strong>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Sold to: {deal.customer.name}</div>
+                      </td>
+                      <td style={{ padding: '16px 24px' }}>
+                         <span style={{ padding: '4px 10px', borderRadius: 99, fontSize: '0.8rem', background: deal.paymentStatus === 'Paid' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)', color: deal.paymentStatus === 'Paid' ? '#10b981' : '#f59e0b' }}>
+                          {deal.paymentStatus}
+                        </span>
+                      </td>
+                      <td style={{ padding: '16px 24px', fontWeight: 'bold' }}>₹ {deal.finalPrice.toLocaleString()}</td>
+                      <td style={{ padding: '16px 24px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center' }}>
                           <button 
-                            onClick={() => setEditingDeal(deal)}
-                            style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: '4px', display: 'inline-flex', alignItems: 'center' }}
-                            title="Edit Deal"
+                            onClick={() => setPrintingInvoice(deal)}
+                            style={{ background: 'transparent', border: 'none', color: '#c084fc', cursor: 'pointer', padding: '4px', display: 'inline-flex', alignItems: 'center' }}
+                            title="Print Invoice"
                           >
-                            <Edit2 size={16} />
+                            <Printer size={16} />
                           </button>
-                          <button 
-                            onClick={() => setDeletingDeal(deal)}
-                            style={{ background: 'transparent', border: 'none', color: '#f43f5e', cursor: 'pointer', padding: '4px', display: 'inline-flex', alignItems: 'center' }}
-                            title="Delete Deal"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                          {!isReadOnly && (
+                            <>
+                              <button 
+                                onClick={() => setEditingDeal(deal)}
+                                style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: '4px', display: 'inline-flex', alignItems: 'center' }}
+                                title="Edit Deal"
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                              <button 
+                                onClick={() => setDeletingDeal(deal)}
+                                style={{ background: 'transparent', border: 'none', color: '#f43f5e', cursor: 'pointer', padding: '4px', display: 'inline-flex', alignItems: 'center' }}
+                                title="Delete Deal"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
 
       {/* 2. Logged Expenses Section */}
