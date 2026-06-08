@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import FormSubmitButton from "@/components/FormSubmitButton";
 import AutoLoader from "@/components/AutoLoader";
+import SearchableCarSelect from "@/components/SearchableCarSelect";
 
 interface Car {
   id: string;
@@ -92,12 +93,12 @@ export default function CloseDealForm({ cars, customers, bankAccounts }: CloseDe
     <form onSubmit={handleSubmit} className="glass-card" style={{ maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
       <label>Select Car 
-         <select name="carId" required defaultValue="" style={{...inputStyle, WebkitAppearance: 'none'}}>
-           <option value="" disabled>Select a vehicle...</option>
-           {cars.map((car) => (
-              <option key={car.id} value={car.id}>{car.brand} {car.model} - {car.registrationNum}</option>
-           ))}
-         </select>
+         <SearchableCarSelect 
+           cars={cars} 
+           name="carId" 
+           required 
+           placeholder="Search by brand, model, or registration number..." 
+         />
       </label>
       
       <label>Select Customer

@@ -32,6 +32,7 @@ import {
   createIncomeEntry,
   createExpenseEntry,
 } from "@/actions/erp";
+import SearchableCarSelect from "@/components/SearchableCarSelect";
 
 interface Car {
   id: string;
@@ -1517,25 +1518,19 @@ export default function FinanceClient({
                 )}
                 <label style={labelStyle}>
                   Attached Vehicle (Optional)
-                  <select 
-                    name="carId" 
-                    value={selectedCarId}
-                    onChange={(e) => {
-                      const cid = e.target.value;
+                  <SearchableCarSelect 
+                    cars={cars}
+                    name="carId"
+                    defaultValue={selectedCarId}
+                    onChange={(cid) => {
                       setSelectedCarId(cid);
                       if (cid && !["REPAIR", "FUEL", "TRAVEL", "MISCELLANEOUS", "Other"].includes(expenseCategory)) {
                         setExpenseCategory("REPAIR");
                       }
                     }}
-                    style={inputStyle}
-                  >
-                    <option value="">None (General Overhead)</option>
-                    {cars.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.brand} {c.model} ({c.registrationNum})
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Search by brand, model, or registration number..."
+                    showClear={true}
+                  />
                 </label>
               </div>
 
