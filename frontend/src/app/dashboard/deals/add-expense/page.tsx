@@ -8,7 +8,7 @@ export default async function AddExpensePage() {
   if (!context) redirect("/onboarding");
   const { business, membership } = context;
 
-  if (membership.role === "PARTNER_VIEW") {
+  if (membership.role !== "OWNER") {
     redirect("/dashboard/deals");
   }
 

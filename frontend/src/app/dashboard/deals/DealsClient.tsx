@@ -56,6 +56,7 @@ interface DealsClientProps {
   expenses: Expense[];
   members: Member[];
   isReadOnly: boolean;
+  role: string;
   businessName: string;
   businessLogo: string | null;
   bankAccounts: BankAccount[];
@@ -95,7 +96,7 @@ const cancelBtnStyle = {
   fontSize: '0.9rem'
 };
 
-export default function DealsClient({ deals, expenses, members, isReadOnly, businessName, businessLogo, bankAccounts }: DealsClientProps) {
+export default function DealsClient({ deals, expenses, members, isReadOnly, role, businessName, businessLogo, bankAccounts }: DealsClientProps) {
   const [isPending, startTransition] = useTransition();
   const unpaidDeals = deals.filter(deal => deal.paymentStatus !== 'Paid');
   const [dealSearch, setDealSearch] = useState("");
@@ -345,7 +346,7 @@ export default function DealsClient({ deals, expenses, members, isReadOnly, busi
                 <th style={{ padding: '16px 24px', fontWeight: 600 }}>Funded By</th>
                 <th style={{ padding: '16px 24px', fontWeight: 600 }}>Type & Description</th>
                 <th style={{ padding: '16px 24px', fontWeight: 600 }}>Cost</th>
-                {!isReadOnly && <th style={{ padding: '16px 24px', fontWeight: 600, textAlign: 'right' }}>Actions</th>}
+                {!isReadOnly && role === "OWNER" && <th style={{ padding: '16px 24px', fontWeight: 600, textAlign: 'right' }}>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -366,7 +367,7 @@ export default function DealsClient({ deals, expenses, members, isReadOnly, busi
                     <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{exp.description}</span>
                   </td>
                   <td style={{ padding: '16px 24px', fontWeight: 'bold', color: '#f43f5e' }}>- ₹ {exp.amount.toLocaleString()}</td>
-                  {!isReadOnly && (
+                  {!isReadOnly && role === "OWNER" && (
                     <td style={{ padding: '16px 24px', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                         <button 

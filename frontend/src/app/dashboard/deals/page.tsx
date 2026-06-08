@@ -106,9 +106,11 @@ export default async function DealsPage() {
         <div style={{ display: 'flex', gap: '12px' }}>
           {!isReadOnly && (
             <>
-              <Link href="/dashboard/deals/add-expense" className="btn-primary" style={{ background: 'rgba(255,255,255,0.1)', boxShadow: 'none' }}>
-                <Plus size={18} style={{ marginRight: 8 }} /> Add Expense
-              </Link>
+              {context.membership.role === "OWNER" && (
+                <Link href="/dashboard/deals/add-expense" className="btn-primary" style={{ background: 'rgba(255,255,255,0.1)', boxShadow: 'none' }}>
+                  <Plus size={18} style={{ marginRight: 8 }} /> Add Expense
+                </Link>
+              )}
               <Link href="/dashboard/deals/create" className="btn-primary">
                 <Plus size={18} style={{ marginRight: 8 }} /> Close Deal
               </Link>
@@ -154,6 +156,7 @@ export default async function DealsPage() {
         expenses={serializedExpenses} 
         members={serializedMembers} 
         isReadOnly={isReadOnly} 
+        role={context.membership.role}
         businessName={context.business.name}
         businessLogo={context.business.logo}
         bankAccounts={serializedBankAccounts}
