@@ -349,13 +349,13 @@ export default function DealsClient({ deals, expenses, members, isReadOnly, busi
       {/* A. Edit Expense Modal */}
       {editingExpense && (
         <div className="checkout-modal-backdrop" onClick={() => setEditingExpense(null)}>
-          <div className="checkout-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+          <div className="checkout-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', maxHeight: 'min(720px, calc(100vh - 40px))', display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '24px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0 }}>Edit Expense</h3>
               <button onClick={() => setEditingExpense(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={20}/></button>
             </div>
             
-            <form onSubmit={handleEditExpense} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <form onSubmit={handleEditExpense} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto', flexGrow: 1, minHeight: 0 }}>
               <input type="hidden" name="id" value={editingExpense.id} />
               
               <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
@@ -457,13 +457,13 @@ export default function DealsClient({ deals, expenses, members, isReadOnly, busi
       {/* C. Edit Deal Modal */}
       {editingDeal && (
         <div className="checkout-modal-backdrop" onClick={() => setEditingDeal(null)}>
-          <div className="checkout-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+          <div className="checkout-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px', maxHeight: 'min(720px, calc(100vh - 40px))', display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '24px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0 }}>Edit Deal Specs</h3>
               <button onClick={() => setEditingDeal(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={20}/></button>
             </div>
             
-            <form onSubmit={handleEditDeal} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <form onSubmit={handleEditDeal} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto', flexGrow: 1, minHeight: 0 }}>
               <input type="hidden" name="id" value={editingDeal.id} />
               
               <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
