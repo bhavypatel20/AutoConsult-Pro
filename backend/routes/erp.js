@@ -743,13 +743,13 @@ router.post('/expenses', uploadBill.single('bill'), async (req, res) => {
       });
     }
     
-    if (cleanCarId && ['REPAIR', 'FUEL', 'TRAVEL', 'MISCELLANEOUS', 'PURCHASE', 'RTO'].includes(category)) {
+    if (cleanCarId && ['REPAIR', 'FUEL', 'TRAVEL', 'MISCELLANEOUS', 'RTO'].includes(category)) {
       await prisma.expense.create({
         data: {
           carId: cleanCarId,
           amount: parsedAmount,
           description: `ERP Expense: ${category} - ${notes || ''}`,
-          expenseType: category === 'REPAIR' ? 'Repair' : (category === 'FUEL' ? 'Fuel' : (category === 'TRAVEL' ? 'Transport' : (category === 'RTO' ? 'RTO' : (category === 'PURCHASE' ? 'Purchase' : 'Service')))),
+          expenseType: category === 'REPAIR' ? 'Repair' : (category === 'FUEL' ? 'Fuel' : (category === 'TRAVEL' ? 'Transport' : (category === 'RTO' ? 'RTO' : 'Service'))),
           paidBy: paidBy === 'Company' ? 'Company' : 'Partner'
         }
       });
