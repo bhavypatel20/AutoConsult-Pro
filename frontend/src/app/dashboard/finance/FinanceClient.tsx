@@ -547,7 +547,7 @@ export default function FinanceClient({
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
               <h3 style={{ fontSize: "1.25rem", fontWeight: 600 }}>Income & Office Overhead Expenditures</h3>
-              {!isReadOnly && role === "OWNER" && (
+              {!isReadOnly && (
                 <div style={{ display: "flex", gap: "12px" }}>
                   <button onClick={() => setActiveModal("log-income")} className="btn-primary" style={{ padding: "8px 16px", background: "rgba(16, 185, 129, 0.1)", color: "#10b981", boxShadow: "none", fontSize: "0.85rem" }}>
                     <Plus size={14} style={{ marginRight: 6 }} /> Log Income
@@ -1367,7 +1367,7 @@ export default function FinanceClient({
       )}
 
       {/* 6. Log Income */}
-      {activeModal === "log-income" && role === "OWNER" && (
+      {activeModal === "log-income" && (
         <div style={modalBackdropStyle} onClick={() => setActiveModal(null)}>
           <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
             <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border-light)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1427,7 +1427,7 @@ export default function FinanceClient({
       )}
 
       {/* 7. Log Expense */}
-      {activeModal === "log-expense" && role === "OWNER" && (
+      {activeModal === "log-expense" && (
         <div style={modalBackdropStyle} onClick={() => setActiveModal(null)}>
           <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
             <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border-light)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>

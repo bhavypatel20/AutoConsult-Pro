@@ -301,7 +301,7 @@ export default function DealsClient({ deals, expenses, members, isReadOnly, role
                           >
                             <Printer size={16} />
                           </button>
-                          {!isReadOnly && (
+                          {!isReadOnly && role === "OWNER" && (
                             <>
                               <button 
                                 onClick={() => setEditingDeal(deal)}

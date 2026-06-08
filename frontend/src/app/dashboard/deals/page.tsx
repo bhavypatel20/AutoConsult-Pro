@@ -106,11 +106,9 @@ export default async function DealsPage() {
         <div style={{ display: 'flex', gap: '12px' }}>
           {!isReadOnly && (
             <>
-              {context.membership.role === "OWNER" && (
-                <Link href="/dashboard/deals/add-expense" className="btn-primary" style={{ background: 'rgba(255,255,255,0.1)', boxShadow: 'none' }}>
-                  <Plus size={18} style={{ marginRight: 8 }} /> Add Expense
-                </Link>
-              )}
+              <Link href="/dashboard/deals/add-expense" className="btn-primary" style={{ background: 'rgba(255,255,255,0.1)', boxShadow: 'none' }}>
+                <Plus size={18} style={{ marginRight: 8 }} /> Add Expense
+              </Link>
               <Link href="/dashboard/deals/create" className="btn-primary">
                 <Plus size={18} style={{ marginRight: 8 }} /> Close Deal
               </Link>
