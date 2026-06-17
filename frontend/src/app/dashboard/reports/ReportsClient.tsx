@@ -43,6 +43,7 @@ interface PartnerLedgerEntry {
   amount: number;
   notes: string | null;
   carId: string | null;
+  carSpec?: string | null;
 }
 
 interface EquityBreakdown {
@@ -1028,7 +1029,15 @@ export default function ReportsClient({
                                   {e.type.replace(/_/g, " ")}
                                 </span>
                               </td>
-                              <td style={{ padding: "10px 12px", fontSize: "0.85rem", color: "var(--text-muted)" }}>{e.notes || "-"}</td>
+                              <td style={{ padding: "10px 12px", fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                                <div>{e.notes || "-"}</div>
+                                {e.carSpec && (
+                                  <div style={{ fontSize: "0.75rem", color: "#34d399", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+                                    <span>🚗</span>
+                                    <span>{e.carSpec}</span>
+                                  </div>
+                                )}
+                              </td>
                               <td style={{ padding: "10px 12px", fontSize: "0.85rem", fontWeight: 600, textAlign: "right", color: isAdd ? "#10b981" : "#ef4444" }}>
                                 {isAdd ? "+" : "-"} ₹ {e.amount.toLocaleString("en-IN")}
                               </td>

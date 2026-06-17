@@ -5,6 +5,32 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+async function generateTxnNum(businessId) {
+  let attempts = 0;
+  let nextNum = 10001;
+  while (attempts < 10) {
+    const lastTxn = await prisma.transaction.findFirst({
+      orderBy: { transactionNum: 'desc' }
+    });
+    if (lastTxn && lastTxn.transactionNum.startsWith('TXN-')) {
+      const numPart = parseInt(lastTxn.transactionNum.replace('TXN-', ''));
+      if (!isNaN(numPart)) {
+        nextNum = Math.max(nextNum, numPart + 1);
+      }
+    }
+    const proposedTxnNum = `TXN-${nextNum}`;
+    const exists = await prisma.transaction.findUnique({
+      where: { transactionNum: proposedTxnNum }
+    });
+    if (!exists) {
+      return proposedTxnNum;
+    }
+    nextNum++;
+    attempts++;
+  }
+  return `TXN-${Date.now()}`;
+}
+
 // Setup multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -67,6 +93,10 @@ router.post('/', upload.single('image'), async (req, res) => {
       },
     });
 
+    const { paidBy, partnerId, bankAccountId } = req.body;
+    const cleanPartnerId = (partnerId && partnerId !== 'null' && partnerId !== 'undefined' && partnerId !== '') ? partnerId : null;
+    const cleanBankAccountId = (bankAccountId && bankAccountId !== 'null' && bankAccountId !== 'undefined' && bankAccountId !== '') ? bankAccountId : null;
+
     const parsedPaidAmount = req.body.paidAmount !== undefined && req.body.paidAmount !== "" 
       ? parseFloat(req.body.paidAmount) 
       : purchasePrice;
@@ -86,6 +116,92 @@ router.post('/', upload.single('image'), async (req, res) => {
         createdAt: purchaseDate ? new Date(purchaseDate) : undefined,
       }
     });
+
+    // Handle financial funding integration
+    if (parsedPaidAmount > 0) {
+      const pDate = purchaseDate ? new Date(purchaseDate) : new Date();
+      if (paidBy === 'Partner' && cleanPartnerId) {
+        // Log expense entry in erp
+        await prisma.expenseEntry.create({
+          data: {
+            businessId,
+            amount: parsedPaidAmount,
+            category: 'PURCHASE',
+            paidBy: 'Partner',
+            partnerId: cleanPartnerId,
+            carId: car.id,
+            notes: `Purchase funding for vehicle: ${brand} ${model} (${registrationNum})`,
+            date: pDate
+          }
+        });
+
+        // Credit partner ledger
+        await prisma.partnerLedger.create({
+          data: {
+            businessId,
+            partnerId: cleanPartnerId,
+            type: 'EXPENSE_PAID_BY_PARTNER',
+            amount: parsedPaidAmount,
+            notes: `Expense categorized as: PURCHASE. Notes: Purchase`,
+            carId: car.id,
+            date: pDate
+          }
+        });
+
+        // Log master transaction
+        const txnNum = await generateTxnNum(businessId);
+        await prisma.transaction.create({
+          data: {
+            transactionNum: txnNum,
+            businessId,
+            type: 'EXPENSE',
+            amount: parsedPaidAmount,
+            paymentMode: 'CASH', // Non-cash ledger swap
+            notes: `Expense under PURCHASE paid personally by partner`,
+            date: pDate,
+            relatedEntityId: cleanPartnerId
+          }
+        });
+      } else if (paidBy === 'Company' && cleanBankAccountId) {
+        // Log expense entry in erp
+        await prisma.expenseEntry.create({
+          data: {
+            businessId,
+            amount: parsedPaidAmount,
+            category: 'PURCHASE',
+            paidBy: 'Company',
+            carId: car.id,
+            notes: `Purchase funding for vehicle: ${brand} ${model} (${registrationNum})`,
+            date: pDate
+          }
+        });
+
+        // Debit bank account balance
+        const account = await prisma.bankAccount.findUnique({ where: { id: cleanBankAccountId } });
+        if (account) {
+          await prisma.bankAccount.update({
+            where: { id: cleanBankAccountId },
+            data: { balance: account.balance - parsedPaidAmount }
+          });
+
+          // Log master transaction
+          const txnNum = await generateTxnNum(businessId);
+          await prisma.transaction.create({
+            data: {
+              transactionNum: txnNum,
+              businessId,
+              type: 'EXPENSE',
+              amount: parsedPaidAmount,
+              paymentMode: account.name === 'Cash' ? 'CASH' : 'BANK_TRANSFER',
+              fromAccountId: cleanBankAccountId,
+              notes: `Vehicle purchase for ${brand} ${model} paid from company account`,
+              date: pDate,
+              relatedEntityId: car.id
+            }
+          });
+        }
+      }
+    }
 
     res.status(201).json(car);
   } catch (error) {
@@ -126,6 +242,30 @@ router.put('/:id', upload.single('image'), async (req, res) => {
       where: { id },
       data: updateData,
     });
+
+    // Sync Seller Ledger
+    const sellerLedger = await prisma.sellerLedger.findFirst({
+      where: { carId: id }
+    });
+
+    if (sellerLedger) {
+      const updatedPurchasePrice = req.body.purchasePrice ? parseFloat(req.body.purchasePrice) : car.purchasePrice;
+      const updatedSellerName = sellerName || car.sellerName || "Direct Seller";
+
+      const newPendingAmount = Math.max(0, updatedPurchasePrice - sellerLedger.paidAmount);
+      const newStatus = newPendingAmount <= 0 ? 'Completed' : (sellerLedger.paidAmount > 0 ? 'Partial' : 'Pending');
+
+      await prisma.sellerLedger.update({
+        where: { id: sellerLedger.id },
+        data: {
+          sellerName: updatedSellerName,
+          totalPurchaseAmount: updatedPurchasePrice,
+          pendingAmount: newPendingAmount,
+          status: newStatus
+        }
+      });
+    }
+
     res.json(updatedCar);
   } catch (error) {
     res.status(500).json({ error: error.message });

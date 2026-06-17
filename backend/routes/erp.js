@@ -1051,14 +1051,18 @@ router.get('/reports', async (req, res) => {
         email: partner.email,
         isActive: partner.isActive,
         equity: balance,
-        ledgerEntries: partner.ledgerEntries.map(e => ({
-          id: e.id,
-          date: e.date,
-          type: e.type,
-          amount: e.amount,
-          notes: e.notes,
-          carId: e.carId
-        }))
+        ledgerEntries: partner.ledgerEntries.map(e => {
+          const linkedCar = cars.find(c => c.id === e.carId);
+          return {
+            id: e.id,
+            date: e.date,
+            type: e.type,
+            amount: e.amount,
+            notes: e.notes,
+            carId: e.carId,
+            carSpec: linkedCar ? `${linkedCar.brand} ${linkedCar.model} (${linkedCar.registrationNum})` : null
+          };
+        })
       };
     });
     

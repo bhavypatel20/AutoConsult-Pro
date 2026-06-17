@@ -2,7 +2,8 @@
  
 import { addCar } from "@/actions/car";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getPartners, getBankAccounts } from "@/actions/erp";
 import AutoLoader from "@/components/AutoLoader";
 import { CAR_DATA, GENERIC_VARIANTS } from "@/lib/carData";
 import { compressImage } from "@/lib/image";
@@ -17,6 +18,24 @@ export default function AddCarPage() {
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedVariant, setSelectedVariant] = useState("");
+
+  const [partners, setPartners] = useState<any[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
+  const [fundingMode, setFundingMode] = useState("Pending");
+
+  useEffect(() => {
+    async function loadFundingSources() {
+      try {
+        const partnersList = await getPartners();
+        const accountsList = await getBankAccounts();
+        setPartners(partnersList || []);
+        setBankAccounts(accountsList || []);
+      } catch (err) {
+        console.error("Failed to load funding sources:", err);
+      }
+    }
+    loadFundingSources();
+  }, []);
 
   // Get variants for the selected brand and model
   let modelVariants: string[] = [];
@@ -346,6 +365,46 @@ export default function AddCarPage() {
               style={inputStyle} 
             />
           </label>
+        </div>
+
+        <div className="responsive-grid-2">
+          <label style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <span>Funding Source (Who paid?)</span>
+            <select 
+              name="paidBy" 
+              style={{...inputStyle, WebkitAppearance: 'none'}}
+              value={fundingMode}
+              onChange={(e) => setFundingMode(e.target.value)}
+            >
+              <option value="Pending">Unpaid / Pending (Seller Ledger)</option>
+              <option value="Partner">Partner (Capital Contribution)</option>
+              <option value="Company">Company (Bank Account)</option>
+            </select>
+          </label>
+
+          {fundingMode === "Partner" && (
+            <label style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <span>Select Funding Partner</span>
+              <select name="partnerId" required style={{...inputStyle, WebkitAppearance: 'none'}}>
+                <option value="" disabled>Select partner...</option>
+                {partners.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {fundingMode === "Company" && (
+            <label style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <span>Select Funding Bank Account</span>
+              <select name="bankAccountId" required style={{...inputStyle, WebkitAppearance: 'none'}}>
+                <option value="" disabled>Select bank account...</option>
+                {bankAccounts.map(ba => (
+                  <option key={ba.id} value={ba.id}>{ba.name} (Bal: ₹{ba.balance.toLocaleString("en-IN")})</option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
 
         <div className="responsive-grid-2">

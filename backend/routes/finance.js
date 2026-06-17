@@ -472,6 +472,20 @@ router.delete('/expense/:id', async (req, res) => {
           where: { id: cashAccount.id },
           data: { balance: cashAccount.balance + oldAmount }
         });
+
+        // Delete corresponding Company transaction
+        const matchingTxn = await prisma.transaction.findFirst({
+          where: {
+            businessId,
+            type: 'EXPENSE',
+            amount: oldAmount,
+            relatedEntityId: expense.carId
+          },
+          orderBy: { date: 'desc' }
+        });
+        if (matchingTxn) {
+          await prisma.transaction.delete({ where: { id: matchingTxn.id } });
+        }
       } else {
         const oldPartner = await prisma.partner.findFirst({ where: { businessId, name: oldPaidBy } });
         if (oldPartner) {
@@ -480,6 +494,20 @@ router.delete('/expense/:id', async (req, res) => {
           });
           if (entry) {
             await prisma.partnerLedger.delete({ where: { id: entry.id } });
+          }
+
+          // Delete corresponding Partner transaction
+          const matchingTxn = await prisma.transaction.findFirst({
+            where: {
+              businessId,
+              type: 'EXPENSE',
+              amount: oldAmount,
+              relatedEntityId: oldPartner.id
+            },
+            orderBy: { date: 'desc' }
+          });
+          if (matchingTxn) {
+            await prisma.transaction.delete({ where: { id: matchingTxn.id } });
           }
         }
       }
@@ -682,6 +710,11 @@ router.delete('/deal/:id', async (req, res) => {
     if (deal.businessId !== businessId) {
       return res.status(403).json({ error: "Unauthorized: Deal does not belong to your business." });
     }
+
+    // Delete associated CustomerLedger
+    await prisma.customerLedger.deleteMany({
+      where: { dealId: id }
+    });
 
     // Delete the deal
     await prisma.deal.delete({
